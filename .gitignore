@@ -23,3 +23,6 @@ go.work.sum
 
 # env file
 .env
+
+# Program binary
+/vpn-indexer
