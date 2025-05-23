@@ -28,6 +28,7 @@ type Config struct {
 	Debug   DebugConfig   `yaml:"debug"`
 	Indexer IndexerConfig `yaml:"indexer"`
 	State   StateConfig   `yaml:"state"`
+	Ca      CaConfig      `yaml:"ca"`
 }
 
 type LoggingConfig struct {
@@ -57,6 +58,15 @@ type IndexerConfig struct {
 
 type StateConfig struct {
 	Directory string `yaml:"dir" envconfig:"STATE_DIR"`
+}
+
+type CaConfig struct {
+	Cert           string `yaml:"cert" envconfig:"CA_CERT"`
+	CertFile       string `yaml:"certFile" envconfig:"CA_CERT_FILE"`
+	Key            string `yaml:"key" envconfig:"CA_KEY"`
+	KeyFile        string `yaml:"keyFile" envconfig:"CA_KEY_FILE"`
+	Passphrase     string `yaml:"passphrase" envconfig:"CA_PASSPHRASE"`
+	PassphraseFile string `yaml:"passphraseFile" envconfig:"CA_PASSPHRASE_FILE"`
 }
 
 // Singleton config instance with default values

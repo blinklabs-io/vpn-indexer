@@ -9,7 +9,9 @@ require (
 	github.com/blinklabs-io/gouroboros v0.121.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.22.0
+	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78
 	go.uber.org/automaxprocs v1.6.0
+	golang.org/x/crypto v0.38.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -32,7 +34,6 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/utxorpc/go-codegen v0.16.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	golang.org/x/crypto v0.38.0 // indirect
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
