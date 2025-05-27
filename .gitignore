@@ -26,3 +26,6 @@ go.work.sum
 
 # Program binary
 /vpn-indexer
+
+# Local data dir
+/.vpn-indexer

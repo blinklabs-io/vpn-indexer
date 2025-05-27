@@ -29,6 +29,7 @@ import (
 	"github.com/blinklabs-io/adder/pipeline"
 	ocommon "github.com/blinklabs-io/gouroboros/protocol/common"
 	"github.com/blinklabs-io/vpn-indexer/internal/config"
+	"github.com/blinklabs-io/vpn-indexer/internal/database"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -49,6 +50,7 @@ var (
 )
 
 type Indexer struct {
+	db           *database.Database
 	pipeline     *pipeline.Pipeline
 	tipReached   bool
 	syncLogTimer *time.Timer
@@ -58,7 +60,8 @@ type Indexer struct {
 // Singleton indexer instance
 var globalIndexer = &Indexer{}
 
-func (i *Indexer) Start(cfg *config.Config, logger *slog.Logger) error {
+func (i *Indexer) Start(cfg *config.Config, logger *slog.Logger, db *database.Database) error {
+	i.db = db
 	// Create pipeline
 	i.pipeline = pipeline.New()
 	// Configure pipeline input

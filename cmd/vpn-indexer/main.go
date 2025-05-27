@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/blinklabs-io/vpn-indexer/internal/config"
+	"github.com/blinklabs-io/vpn-indexer/internal/database"
 	"github.com/blinklabs-io/vpn-indexer/internal/indexer"
 	"github.com/blinklabs-io/vpn-indexer/internal/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -66,6 +67,13 @@ func main() {
 	})
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
+
+	// Open database
+	db, err := database.New(cfg, logger)
+	if err != nil {
+		slog.Error("failed to open database", "error", err)
+		os.Exit(1)
+	}
 
 	// Configure max processes with our logger wrapper, toss undo func
 	_, err = maxprocs.Set(maxprocs.Logger(slogPrintf))
@@ -146,7 +154,7 @@ func main() {
 	}
 
 	// Start indexer
-	if err := indexer.GetIndexer().Start(cfg, logger); err != nil {
+	if err := indexer.GetIndexer().Start(cfg, logger, db); err != nil {
 		slog.Error(
 			fmt.Sprintf("failed to start indexer: %s", err),
 		)
