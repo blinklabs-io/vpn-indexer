@@ -51,6 +51,7 @@ var (
 
 type Indexer struct {
 	db           *database.Database
+	logger       *slog.Logger
 	pipeline     *pipeline.Pipeline
 	tipReached   bool
 	syncLogTimer *time.Timer
@@ -62,6 +63,7 @@ var globalIndexer = &Indexer{}
 
 func (i *Indexer) Start(cfg *config.Config, logger *slog.Logger, db *database.Database) error {
 	i.db = db
+	i.logger = logger
 	// Create pipeline
 	i.pipeline = pipeline.New()
 	// Configure pipeline input
@@ -95,36 +97,22 @@ func (i *Indexer) Start(cfg *config.Config, logger *slog.Logger, db *database.Da
 			input_chainsync.WithSocketPath(cfg.Indexer.SocketPath),
 		)
 	}
-	/*
-		cursorSlotNumber, cursorBlockHash, err := state.GetState().GetCursor()
-		if err != nil {
-			return err
-		}
-	*/
-	// TODO: remove these defaults in favor of getting intersect point(s) from state
-	var cursorSlotNumber uint64 = 0
-	var cursorBlockHash string
-	if cursorSlotNumber > 0 {
+	cursorPoints, err := i.db.GetCursorPoints()
+	if err != nil {
+		return err
+	}
+	if len(cursorPoints) > 0 {
 		slog.Info(
 			fmt.Sprintf(
-				"found previous chainsync cursor: %d, %s",
-				cursorSlotNumber,
-				cursorBlockHash,
+				"found previous chainsync cursor(s), latest is: %d, %x",
+				cursorPoints[0].Slot,
+				cursorPoints[0].Hash,
 			),
 		)
-		hashBytes, err := hex.DecodeString(cursorBlockHash)
-		if err != nil {
-			return err
-		}
 		inputOpts = append(
 			inputOpts,
 			input_chainsync.WithIntersectPoints(
-				[]ocommon.Point{
-					{
-						Hash: hashBytes,
-						Slot: cursorSlotNumber,
-					},
-				},
+				cursorPoints,
 			),
 		)
 	} else if cfg.Indexer.IntersectHash != "" && cfg.Indexer.IntersectSlot > 0 {
@@ -190,22 +178,28 @@ func (i *Indexer) Start(cfg *config.Config, logger *slog.Logger, db *database.Da
 }
 
 func (i *Indexer) updateStatus(status input_chainsync.ChainSyncStatus) {
+	// Store sync status
 	i.syncStatus = status
+	// Update metrics
 	metricSlot.Set(float64(status.SlotNumber))
 	metricTipSlot.Set(float64(status.TipSlotNumber))
-	/*
-		if err := state.GetState().UpdateCursor(status.SlotNumber, status.BlockHash); err != nil {
-			slog.Error(
-				fmt.Sprintf("failed to update cursor: %s", err),
-			)
-		}
-	*/
+	// Update chainsync cursor
+	blockHash, _ := hex.DecodeString(status.BlockHash)
+	cursorPoint := ocommon.Point{
+		Hash: blockHash,
+		Slot: status.SlotNumber,
+	}
+	if err := i.db.AddCursorPoint(cursorPoint); err != nil {
+		i.logger.Error("failed to update chain cursor", "error", err)
+		return
+	}
+	// Check if we've reached chain tip
 	if !i.tipReached && status.TipReached {
 		if i.syncLogTimer != nil {
 			i.syncLogTimer.Stop()
 		}
 		i.tipReached = true
-		slog.Info("caught up to chain tip")
+		i.logger.Info("caught up to chain tip")
 	}
 }
 

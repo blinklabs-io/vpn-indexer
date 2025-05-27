@@ -15,5 +15,5 @@
 package database
 
 var MigrateModels = []any{
-	// TODO
+	&Cursor{},
 }
