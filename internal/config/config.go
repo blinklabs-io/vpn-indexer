@@ -23,12 +23,12 @@ import (
 )
 
 type Config struct {
-	Logging LoggingConfig `yaml:"logging"`
-	Metrics MetricsConfig `yaml:"metrics"`
-	Debug   DebugConfig   `yaml:"debug"`
-	Indexer IndexerConfig `yaml:"indexer"`
-	State   StateConfig   `yaml:"state"`
-	Ca      CaConfig      `yaml:"ca"`
+	Logging  LoggingConfig  `yaml:"logging"`
+	Metrics  MetricsConfig  `yaml:"metrics"`
+	Debug    DebugConfig    `yaml:"debug"`
+	Indexer  IndexerConfig  `yaml:"indexer"`
+	Database DatabaseConfig `yaml:"database"`
+	Ca       CaConfig       `yaml:"ca"`
 }
 
 type LoggingConfig struct {
@@ -56,8 +56,8 @@ type IndexerConfig struct {
 	DelayConfirmations uint   `yaml:"delayConfirmations" envconfig:"INDEXER_DELAY_CONFIRMATIONS"`
 }
 
-type StateConfig struct {
-	Directory string `yaml:"dir" envconfig:"STATE_DIR"`
+type DatabaseConfig struct {
+	Directory string `yaml:"dir" envconfig:"DATABASE_DIR"`
 }
 
 type CaConfig struct {
@@ -89,8 +89,8 @@ var globalConfig = &Config{
 		IntersectSlot: 156_204_633,
 		IntersectHash: "7a5708b6a34c389991474273817847aadfc0097ca57cccffd1c2fb4c6c76bbec",
 	},
-	State: StateConfig{
-		Directory: "./.state",
+	Database: DatabaseConfig{
+		Directory: "./.vpn-indexer",
 	},
 }
 
