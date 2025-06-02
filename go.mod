@@ -6,7 +6,7 @@ toolchain go1.23.9
 
 require (
 	github.com/blinklabs-io/adder v0.30.1
-	github.com/blinklabs-io/gouroboros v0.121.0
+	github.com/blinklabs-io/gouroboros v0.122.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.22.0
