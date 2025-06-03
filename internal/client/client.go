@@ -1,0 +1,143 @@
+// Copyright 2025 Blink Labs Software
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package client
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strings"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/blinklabs-io/vpn-indexer/internal/ca"
+	"github.com/blinklabs-io/vpn-indexer/internal/config"
+)
+
+const profileTemplate = `
+client
+dev tun
+proto tcp
+remote %s %d
+nobind
+persist-tun
+
+<cert>
+%s
+</cert>
+
+<key>
+%s
+</key>
+
+<ca>
+%s
+</ca>
+`
+
+type Client struct {
+	config *config.Config
+	ca     *ca.Ca
+	name   string
+}
+
+func New(cfg *config.Config, caObj *ca.Ca, name string) *Client {
+	return &Client{
+		config: cfg,
+		ca:     caObj,
+		name:   name,
+	}
+}
+
+func (c *Client) Generate(host string, port int) error {
+	if ok, err := c.ProfileExists(); err != nil {
+		return err
+	} else if ok {
+		return nil
+	}
+	// Generate certs for client
+	certs, err := c.ca.GenerateClientCert(c.name)
+	if err != nil {
+		return err
+	}
+	// Generate profile from template
+	profile := fmt.Sprintf(
+		profileTemplate,
+		host,
+		port,
+		certs.Cert,
+		certs.Key,
+		certs.CaCert,
+	)
+	// Upload profile to S3
+	svc, err := c.createS3Client()
+	if err != nil {
+		return err
+	}
+	_, err = svc.PutObject(
+		context.TODO(),
+		&s3.PutObjectInput{
+			Bucket: aws.String(c.config.S3.ClientBucket),
+			Key:    aws.String(c.profileKey()),
+			Body:   strings.NewReader(profile),
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) ProfileExists() (bool, error) {
+	svc, err := c.createS3Client()
+	if err != nil {
+		return false, err
+	}
+	_, err = svc.HeadObject(
+		context.TODO(),
+		&s3.HeadObjectInput{
+			Bucket: aws.String(c.config.S3.ClientBucket),
+			Key:    aws.String(c.profileKey()),
+		},
+	)
+	if err != nil {
+		// Check for explicit "No such key" error
+		var nfErr *s3types.NotFound
+		if errors.As(err, &nfErr) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func (c *Client) profileKey() string {
+	return fmt.Sprintf(
+		"%s%s.ovpn",
+		c.config.S3.ClientKeyPrefix,
+		c.name,
+	)
+}
+
+func (c *Client) createS3Client() (*s3.Client, error) {
+	cfg, err := awsconfig.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+	client := s3.NewFromConfig(cfg)
+	return client, nil
+}

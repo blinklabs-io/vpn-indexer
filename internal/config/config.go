@@ -29,6 +29,7 @@ type Config struct {
 	Indexer  IndexerConfig  `yaml:"indexer"`
 	Database DatabaseConfig `yaml:"database"`
 	Ca       CaConfig       `yaml:"ca"`
+	S3       S3Config       `yaml:"s3"`
 }
 
 type LoggingConfig struct {
@@ -67,6 +68,11 @@ type CaConfig struct {
 	KeyFile        string `yaml:"keyFile" envconfig:"CA_KEY_FILE"`
 	Passphrase     string `yaml:"passphrase" envconfig:"CA_PASSPHRASE"`
 	PassphraseFile string `yaml:"passphraseFile" envconfig:"CA_PASSPHRASE_FILE"`
+}
+
+type S3Config struct {
+	ClientBucket    string `yaml:"clientBucket" envconfig:"S3_CLIENT_BUCKET"`
+	ClientKeyPrefix string `yaml:"clientKeyPrefix" envconfig:"S3_CLIENT_KEY_PREFIX"`
 }
 
 // Singleton config instance with default values
