@@ -23,6 +23,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/blinklabs-io/vpn-indexer/internal/ca"
 	"github.com/blinklabs-io/vpn-indexer/internal/config"
 	"github.com/blinklabs-io/vpn-indexer/internal/database"
 	"github.com/blinklabs-io/vpn-indexer/internal/indexer"
@@ -153,8 +154,17 @@ func main() {
 		}()
 	}
 
+	// Configure CA
+	ca, err := ca.New(cfg)
+	if err != nil {
+		slog.Error(
+			fmt.Sprintf("failed to configure CA: %s", err),
+		)
+		os.Exit(1)
+	}
+
 	// Start indexer
-	if err := indexer.GetIndexer().Start(cfg, logger, db); err != nil {
+	if err := indexer.GetIndexer().Start(cfg, logger, db, ca); err != nil {
 		slog.Error(
 			fmt.Sprintf("failed to start indexer: %s", err),
 		)

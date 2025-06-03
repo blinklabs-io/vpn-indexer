@@ -27,7 +27,10 @@ import (
 	input_chainsync "github.com/blinklabs-io/adder/input/chainsync"
 	output_embedded "github.com/blinklabs-io/adder/output/embedded"
 	"github.com/blinklabs-io/adder/pipeline"
+	"github.com/blinklabs-io/gouroboros/cbor"
 	ocommon "github.com/blinklabs-io/gouroboros/protocol/common"
+	"github.com/blinklabs-io/vpn-indexer/internal/ca"
+	"github.com/blinklabs-io/vpn-indexer/internal/client"
 	"github.com/blinklabs-io/vpn-indexer/internal/config"
 	"github.com/blinklabs-io/vpn-indexer/internal/database"
 	"github.com/prometheus/client_golang/prometheus"
@@ -50,7 +53,9 @@ var (
 )
 
 type Indexer struct {
+	cfg          *config.Config
 	db           *database.Database
+	ca           *ca.Ca
 	logger       *slog.Logger
 	pipeline     *pipeline.Pipeline
 	tipReached   bool
@@ -61,8 +66,10 @@ type Indexer struct {
 // Singleton indexer instance
 var globalIndexer = &Indexer{}
 
-func (i *Indexer) Start(cfg *config.Config, logger *slog.Logger, db *database.Database) error {
+func (i *Indexer) Start(cfg *config.Config, logger *slog.Logger, db *database.Database, ca *ca.Ca) error {
+	i.cfg = cfg
 	i.db = db
+	i.ca = ca
 	i.logger = logger
 	// Create pipeline
 	i.pipeline = pipeline.New()
@@ -204,7 +211,44 @@ func (i *Indexer) updateStatus(status input_chainsync.ChainSyncStatus) {
 }
 
 func (i *Indexer) handleEvent(evt event.Event) error {
-	// TODO
+	switch evtData := evt.Payload.(type) {
+	case input_chainsync.TransactionEvent:
+		for _, txOutput := range evtData.Transaction.Produced() {
+			datum := txOutput.Output.Datum()
+			if datum == nil {
+				continue
+			}
+			var clientDatum ClientDatum
+			if _, err := cbor.Decode(datum.Cbor(), &clientDatum); err != nil {
+				i.logger.Warn(
+					fmt.Sprintf(
+						"ignoring unknown datum format in %s",
+						txOutput.Id.String(),
+					),
+				)
+				continue
+			}
+			// Generate client
+			tmpClient := client.New(i.cfg, i.ca, string(clientDatum.ClientName))
+			vpnHost := fmt.Sprintf(
+				"%s.%s",
+				string(clientDatum.Region),
+				i.cfg.Vpn.Domain,
+			)
+			if err := tmpClient.Generate(vpnHost, i.cfg.Vpn.Port); err != nil {
+				return err
+			}
+			i.logger.Info(
+				fmt.Sprintf(
+					"generated client '%s' (%x)",
+					clientDatum.ClientName,
+					clientDatum.ClientName,
+				),
+			)
+		}
+	default:
+		return fmt.Errorf("unexpected event type: %T", evt.Payload)
+	}
 	return nil
 }
 

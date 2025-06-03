@@ -30,6 +30,7 @@ type Config struct {
 	Database DatabaseConfig `yaml:"database"`
 	Ca       CaConfig       `yaml:"ca"`
 	S3       S3Config       `yaml:"s3"`
+	Vpn      VpnConfig      `yaml:"vpn"`
 }
 
 type LoggingConfig struct {
@@ -75,6 +76,11 @@ type S3Config struct {
 	ClientKeyPrefix string `yaml:"clientKeyPrefix" envconfig:"S3_CLIENT_KEY_PREFIX"`
 }
 
+type VpnConfig struct {
+	Domain string `yaml:"domain"`
+	Port   int    `yaml:"port"`
+}
+
 // Singleton config instance with default values
 var globalConfig = &Config{
 	Logging: LoggingConfig{
@@ -89,14 +95,18 @@ var globalConfig = &Config{
 		ListenPort:    8081,
 	},
 	Indexer: IndexerConfig{
-		Network: "mainnet",
-		// NOTE: these values were the current tip at the time this code was written
-		// The user should provide more appropriate values, especially on a network other than mainnet
-		IntersectSlot: 156_204_633,
-		IntersectHash: "7a5708b6a34c389991474273817847aadfc0097ca57cccffd1c2fb4c6c76bbec",
+		Network: "preview",
+		// NOTE: these values correspond to the block before the first TXs with datum in the test wallet
+		IntersectSlot: 82_326_620,
+		IntersectHash: "187b93d84418e56b4e5a26eebffa5f64af67230e8706ae27e0d0599178b01f77",
+		ScriptAddress: "addr_test1qqawz5hm2tchtmarkfn2tamzvd2spatl89gtutgra6zwc3ktqj7p944ckc9lq7u36jrq99znwhzlq6jfv2j4ql92m4rq07hp8t",
 	},
 	Database: DatabaseConfig{
 		Directory: "./.vpn-indexer",
+	},
+	Vpn: VpnConfig{
+		Domain: "test.domain",
+		Port:   443,
 	},
 }
 
