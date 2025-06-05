@@ -88,16 +88,6 @@ func main() {
 		fmt.Sprintf("vpn-indexer %s started", version.GetVersionString()),
 	)
 
-	/*
-		// Load state
-		if err := state.GetState().Load(); err != nil {
-			slog.Error(
-				fmt.Sprintf("failed to load state: %s", err),
-			)
-			os.Exit(1)
-		}
-	*/
-
 	// Start debug listener
 	if cfg.Debug.ListenPort > 0 {
 		slog.Info(

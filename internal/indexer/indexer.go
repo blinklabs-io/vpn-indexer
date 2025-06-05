@@ -228,6 +228,16 @@ func (i *Indexer) handleEvent(evt event.Event) error {
 				)
 				continue
 			}
+			// Record client datum in database
+			err := i.db.AddClient(
+				string(clientDatum.ClientName),
+				time.Unix(int64(clientDatum.Expiration), 0),
+				clientDatum.Credential,
+				string(clientDatum.Region),
+			)
+			if err != nil {
+				return err
+			}
 			// Generate client
 			tmpClient := client.New(i.cfg, i.ca, string(clientDatum.ClientName))
 			vpnHost := fmt.Sprintf(
