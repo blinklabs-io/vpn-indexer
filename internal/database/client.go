@@ -14,9 +14,34 @@
 
 package database
 
-// MigrateModels contains a list of database model types to perform automatic migrations
-// on at startup
-var MigrateModels = []any{
-	&Client{},
-	&Cursor{},
+import "time"
+
+type Client struct {
+	ID         uint   `gorm:"primaryKey"`
+	Name       string `gorm:"index"`
+	Expiration time.Time
+	Credential []byte
+	Region     string
+}
+
+func (Client) TableName() string {
+	return "client"
+}
+
+func (d *Database) AddClient(
+	clientName string,
+	expiration time.Time,
+	credential []byte,
+	region string,
+) error {
+	tmpItem := Client{
+		Name:       clientName,
+		Expiration: expiration,
+		Credential: credential,
+		Region:     region,
+	}
+	if result := d.db.Create(&tmpItem); result.Error != nil {
+		return result.Error
+	}
+	return nil
 }
