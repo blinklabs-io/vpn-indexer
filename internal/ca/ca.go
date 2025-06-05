@@ -16,6 +16,7 @@ package ca
 
 import (
 	"bytes"
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -33,7 +34,7 @@ import (
 
 type Ca struct {
 	caCert    *x509.Certificate
-	caKey     any
+	caKey     crypto.Signer
 	caCertPem []byte
 }
 
@@ -117,7 +118,7 @@ func (c *Ca) loadKey(cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
-	c.caKey = key
+	c.caKey = key.(crypto.Signer)
 	return nil
 }
 
@@ -176,5 +177,29 @@ func (c *Ca) GenerateClientCert(clientName string) (*ClientCert, error) {
 		Cert:   certPem.String(),
 		Key:    keyPem.String(),
 	}
+	return ret, nil
+}
+
+func (c *Ca) GenerateCRL(revokedCerts []pkix.RevokedCertificate, issuedTime time.Time, expireTime time.Time) ([]byte, error) {
+	crlBytes, err := x509.CreateRevocationList(
+		rand.Reader,
+		&x509.RevocationList{
+			Number:              big.NewInt(issuedTime.UnixNano()),
+			RevokedCertificates: revokedCerts,
+			ThisUpdate:          issuedTime,
+			NextUpdate:          expireTime,
+		},
+		c.caCert,
+		c.caKey,
+	)
+	if err != nil {
+		return nil, err
+	}
+	ret := pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "X509 CRL",
+			Bytes: crlBytes,
+		},
+	)
 	return ret, nil
 }

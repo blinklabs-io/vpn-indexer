@@ -16,9 +16,13 @@ package ca
 
 import (
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/hex"
 	"encoding/pem"
+	"math/big"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/blinklabs-io/vpn-indexer/internal/config"
 )
@@ -27,38 +31,41 @@ import (
 // openssl genrsa -out rootCA.key 1024
 var testCaCert = `
 -----BEGIN CERTIFICATE-----
-MIICADCCAWmgAwIBAgIUKGJCuwF+l6LbPeHQFqiEVHQMQ3kwDQYJKoZIhvcNAQEL
-BQAwEjEQMA4GA1UEAwwHVGVzdCBDQTAeFw0yNTA1MjIxMzU1NThaFw0yODEwMDcx
-MzU1NThaMBIxEDAOBgNVBAMMB1Rlc3QgQ0EwgZ8wDQYJKoZIhvcNAQEBBQADgY0A
-MIGJAoGBAMJ2aA8dqU3TYg1YYJm/+eEqYdELFSw12/vViVnpmyr6lWdPpMZvs0a0
-8tyXSAxFDfROD7smwejW4ZHP6uDlYvFOrdmVVceXyIFWMX9cTfV+Frcfr03VvP1r
-LRdzw+gsrh/J5yYogOlVcyHNDJ6OYxrVLqlju7AFBH+MAgqTydb9AgMBAAGjUzBR
-MB0GA1UdDgQWBBSX5PZIhtCq1999UtRHwqE0OtDvoTAfBgNVHSMEGDAWgBSX5PZI
-htCq1999UtRHwqE0OtDvoTAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUA
-A4GBACgl9vew/dQpChJGlsw3AOXT9gekqXG78D1rm237S3JDnxtLWpktjnZKD1w+
-B6f57BfR6/FMhGAs1MmUD0g7lGmFekUFxH8TIppegcmsk4uotHNkLFtObe+rLYAE
-5wMHPW7u2KEVu63Uv4MrWHi3sGxpUEak3efAQGOZLuKsyy3m
+MIIClzCCAgCgAwIBAgIULdRPwP+Ue5oxNvgG6RjBFgEtovAwDQYJKoZIhvcNAQEL
+BQAwVzELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
+GEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDEQMA4GA1UEAwwHVGVzdCBDQTAeFw0y
+NTA2MDUxODU1MTBaFw0yODEwMjExODU1MTBaMFcxCzAJBgNVBAYTAkFVMRMwEQYD
+VQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBM
+dGQxEDAOBgNVBAMMB1Rlc3QgQ0EwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGB
+AM25vK3+qvIdsYsdRBhoVnQa5pfG8UCODD1nGcFBujtRyNCZUQdyu0pX20LhRIUm
+cTByGCOPsZxNr/kAK5mgXmOMWr/0dyyd9KHmeIFmdZCb8wGUI70XeTWIkXLYbffS
+ttwaVV+dClb27FI7Pjzm3ZUMAJ7XifVpj0diVd94l81FAgMBAAGjYDBeMB0GA1Ud
+DgQWBBRbpGrNjgwN/Jj8aLAoe+5AdtOapzAfBgNVHSMEGDAWgBRbpGrNjgwN/Jj8
+aLAoe+5AdtOapzAPBgNVHRMBAf8EBTADAQH/MAsGA1UdDwQEAwIBBjANBgkqhkiG
+9w0BAQsFAAOBgQAq+D287IeZ3R+s4beNyb0z9U4q+XmgZC2H0UtsoP+nDzvnq6EU
+X5K0OZf3nKDQPV886jBYuqpXcYdk86ylQbPQJbvSzqGTxg/WTey4BPN51ojdYEvt
+sQbsfCZK4tx5Q7FwfL9uk+tybKtEyrGKLr+JH07OwKhtQpYGoVtiD6U6nQ==
 -----END CERTIFICATE-----
 `
 
 // Generated with:
-// openssl req -x509 -new -nodes -key rootCA.key -sha256 -days 1234 -out rootCA.crt
+// openssl req -x509 -new -nodes -key rootCA.key -sha256 -days 1234 -addext "keyUsage = cRLSign, keyCertSign" -out rootCA.crt
 var testCaKey = `
 -----BEGIN PRIVATE KEY-----
-MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAMJ2aA8dqU3TYg1Y
-YJm/+eEqYdELFSw12/vViVnpmyr6lWdPpMZvs0a08tyXSAxFDfROD7smwejW4ZHP
-6uDlYvFOrdmVVceXyIFWMX9cTfV+Frcfr03VvP1rLRdzw+gsrh/J5yYogOlVcyHN
-DJ6OYxrVLqlju7AFBH+MAgqTydb9AgMBAAECgYEArDnoIXMYrkfHsKAUNjeTnLtH
-lLfnEZfF9D2D/zDpb2AtkCk2e1UUh0vdSEdn1Q4XtMaqIgvKc2hUsSpfEL24KQkw
-eqo7w4avDw9vUTUMmgpoKPsa5awLL85k9N+aUfobIjHrG6ooY1FtZCam+3Q0sWF3
-UniJMrjvsCfkKksGVMECQQDw3P3tGioE2TvnlbCHf3xPisqwf8VdZxtXGPF/H206
-uFmKbvgbj9zucXGKJlIP6Xfe6yrTf5u9vKJNpoImdkIxAkEAzq7rcZWoTGLAya4K
-6OkZa6YqGwHIoVT4hoLCM0sKhgDRKMoJYDmrhqqnMo/8AW1mMW1+/wvPLr5AR4IK
-VpMCjQJAOVgz8GZBSMQ7eehujePxQbLGjPzujU1F+heLL3vY8pj/YHEJCu7WZ8KE
-iKKU+QrZqi4NFSuVdbfaYGhbJjMTkQJAbPdbui6k5GDMM4hGyDTc6hxY5pQyKpyZ
-ypD1wgU2LyAPJeoet1SwUfd23vl6a2Y6EqUf52dae9JiIVE2Eh6/oQJBANiu5C7Z
-FL0gZq0wTto6HAgYEJnNlqLFR23/5146KsT8DMYh7t/WtVjXVBAbyrexsre5rZ2t
-oP6A6uLgNPIYy94=
+MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAM25vK3+qvIdsYsd
+RBhoVnQa5pfG8UCODD1nGcFBujtRyNCZUQdyu0pX20LhRIUmcTByGCOPsZxNr/kA
+K5mgXmOMWr/0dyyd9KHmeIFmdZCb8wGUI70XeTWIkXLYbffSttwaVV+dClb27FI7
+Pjzm3ZUMAJ7XifVpj0diVd94l81FAgMBAAECgYEArJlQO4qWUVuoQVbkcrXXEsIf
+BOfcMJT8n+eILCPA41PSb3CyEtWnXNApHQtyOWPvQv32Up+UG9bx9K635cQua0U8
+HVuJbm4GO6P+Q/I7cW8uIJPEdBKKbJwZ379F/APGBAP0RD5rJQ1Y65jP1Ii1yOsV
++Y2ayN7q00sIjkctbAECQQDvuEERGy3uIJGP5/YFkAEGuvV/QPyXYIE7TteFhzYr
+nmU+U1qUEATBhJpGWn6AA1b4rz2PKbksap+5MfMDmGFhAkEA27J2b0P2FdOldy8u
+OI+Tx5RFuz7dcjXV59fWnbRO9d0q8MDWDckZ9oqT2yLHQ5sZ1HMkQVDlhPnPc1/s
+PBqiZQJAKjjCxReLbHCyEq2haHNnqt7NFJ/GnYby3BZT4YHiKaaZYHPf9Uoo/Ei1
+v4R62WM9M0nyRr/rjIYvIbhJfC2foQJBAL7xAUw81eEsfE/0uohACSFZda2CurYr
+ogiJJ6cS8dlv6oUqJCABG0aSNGUteeABKlbh56244HJNJ4bP5KJsR50CQEFT6XaA
+rQ0aNyVXoRZrTewWsowzPAasprQhv9qUQPy14+iO9Nttfumge+r4Z6/oqYn9Fem2
+xvIsZvJsUWLOo/c=
 -----END PRIVATE KEY-----
 `
 
@@ -69,22 +76,22 @@ var testCaKeyEncPassphrase = `just a test`
 // openssl rsa -aes256 -in rootCA.key -out rootCA.enc.key
 var testCaKeyEnc = `
 -----BEGIN ENCRYPTED PRIVATE KEY-----
-MIIC3TBXBgkqhkiG9w0BBQ0wSjApBgkqhkiG9w0BBQwwHAQIDMEoH1dJVbACAggA
-MAwGCCqGSIb3DQIJBQAwHQYJYIZIAWUDBAEqBBBlSt8hZDgvubeBhYWwZbEFBIIC
-gPMbcajWza1yoJ53xl3Qsx8BTd1KQXQ/JQ7wuSbI+ixjfYuIChY1uPXnhzmhDzIB
-JZkrgJ/uJqLU56sNx5o1tPhTjHMe/VNCmTupuXEropN3ni2qwjG6i+58iful3JJQ
-Tif45kRdF5CkPpsjWXF0uzgTQARw4z2lD90vprmgJw6iqWpAIBAmq16Nd5ud1PAT
-OW+gkQKuqB6bz3yefxDZ2JVDIQFOrCvwqlHqZO3FFKn0UT56slufAGPprQTklAOp
-ZUlwcdeish/1xEB6Lx1/8ae8apOVXil9FRC5WtTfdz9BRtbUZWpmWiPE6lSHmgUQ
-TXGdueTBqcIjB69c48m8NH9Tq08D4xUbOJe/ZHRejAqlm4iy2ME77gDd64ZCa1n3
-2MpOxFNT4tLJkA7EWbeVow1Nz9+RH4OYGCT2ylNHu2mYrtTNnf/IlvFO8D4GHjkJ
-c89TmLaMEoeKO0Js7r4Ws/7XC/TSKeKlmorlPl6sCRrhyszUAion/QXYaQLIjpSx
-gWsxGUIO/Pcfq+xfEzq6egjbv/AmwsPsNkzgDV9b38O355vc4xG9Qk1rUaXEVZcd
-RNyuNLtcjb63WrLp+czVnZeedtmtip/uyx4F7mU9s6CbI8TdSsa+udcKn2zSYyUl
-Vi6vXxx3PNnAXfcEil/Kzs5Tm+YX+dBfJTVswQu+5b7I7/kQ4AzxsNqG9hebgckR
-tD/GvpKK7krZ7JFLS0baP5dZ6brfPY0WsHmUKjkCAO1tRopSOmwRVI5HUJYPdJOD
-D8Y+8ILFdS+1uebj8ZbkWftQqQS4sHuZt0PxPzvU9LgqW+4aDTOcmz12VICzf0WP
-0oM7b7Ig9sZw1I0Vpqalp8w=
+MIIC3TBXBgkqhkiG9w0BBQ0wSjApBgkqhkiG9w0BBQwwHAQIloZ5IO6WRmwCAggA
+MAwGCCqGSIb3DQIJBQAwHQYJYIZIAWUDBAEqBBDYgPbS34XyzQZqTR2otDU4BIIC
+gB2ZlhscXgA/g3h5ou4AX4WIzcCVT65ZASELT6x7M+FsmfHSNIcqglcdjBycwvvR
+ID1mYuPsZ595bevZX3IVN3jOu4TuN1RVyuYaR6I+oQtxqPJTUuL33z2IlBP4YBVz
+276ntaZZxHEART8dJrZ5RUisJmyR/zNC61mom22cPC/zSem+LlEE+BPtd1BEyQ6W
+vPU1NxVbX/H0P9BYXWKmN0/5DDwkY0JrBsry3pzIrPjBBro1dWyVsxhpvsCQQWr3
+77depOw3dg2b2G/agKQSpIF8pmsLwFNAp0Qb6KcX0MAjrv2YALFTrKzz/rdF5Il2
+4/LNBFAx3zwr8sbICpMgI1tg1VsTEaRRL8J26ZjiAHHtqEsSKkbP5YVAKLtxUrxv
+i/OX1HaBkCb2OLfvtVjkVy7agtKMF7gyAjMpFLr8GmREYbev17/yGM9OvtGjQSjd
+DTL1z6xFChroX57HAbKQXK3KAx4rZKcTlnLxmX3ePG1Vabh2dy3vSR6S2L/L9LGM
++S+Ut5f6RALbDlJN+Rg2inWdqFVvOGyiguTD4X1lp9fy8KUn+lXfQnfK8HbWepmE
+Ds0maozFQCGbGGmKFkZ5Jvy7WuhUmvuUMZ6s25vfRKUyiTMfngyKCmWPAZKxXuOL
+Xri0NZuKVcLIFoZPNEXLju4Sh3zXgQmwcbXXHD2G8qB7VV0gL7HAEdf5wfi2bepu
+j16MyXFnruXcoTBXC+KXJBgX8rqTEC1XCEuWgLr7wQIiwpJeJrEv7/6g9/cKe7wG
+WfPJDbvvj28T9lHm5dEj6ULtmS4l2HPqPGHu7QuaLfpYY5UsYCTXsIpR2uCS51RG
+mjViPR4lTdzB/qtyf0fZkPk=
 -----END ENCRYPTED PRIVATE KEY-----
 `
 
@@ -181,5 +188,53 @@ func TestCaCreateClientEncKey(t *testing.T) {
 	serialHex := hex.EncodeToString(tmpCert.SerialNumber.Bytes())
 	if serialHex != expectedCertSerial {
 		t.Fatalf("did not get expected cert serial: got %s, wanted %s", serialHex, expectedCertSerial)
+	}
+}
+
+func TestCaGenerateCRL(t *testing.T) {
+	testRevokedCerts := []pkix.RevokedCertificate{
+		{
+			SerialNumber:   big.NewInt(123456789),
+			RevocationTime: time.Date(2025, 6, 5, 12, 34, 56, 0, time.UTC),
+		},
+		{
+			SerialNumber:   big.NewInt(234567890),
+			RevocationTime: time.Date(2025, 6, 5, 12, 12, 12, 0, time.UTC),
+		},
+	}
+	testIssuedTime := time.Date(2025, 6, 5, 18, 31, 14, 0, time.UTC)
+	testExpireTime := testIssuedTime.AddDate(1, 0, 0)
+	// NOTE: this content was verified with 'openssl crl -text -noout'
+	expectedCrl := strings.TrimSpace(`
+-----BEGIN X509 CRL-----
+MIIBhzCB8QIBATANBgkqhkiG9w0BAQsFADBXMQswCQYDVQQGEwJBVTETMBEGA1UE
+CAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50ZXJuZXQgV2lkZ2l0cyBQdHkgTHRk
+MRAwDgYDVQQDDAdUZXN0IENBFw0yNTA2MDUxODMxMTRaFw0yNjA2MDUxODMxMTRa
+MC4wFQIEB1vNFRcNMjUwNjA1MTIzNDU2WjAVAgQN+zjSFw0yNTA2MDUxMjEyMTJa
+oDYwNDAfBgNVHSMEGDAWgBRbpGrNjgwN/Jj8aLAoe+5AdtOapzARBgNVHRQECgII
+GEY5FntB9AAwDQYJKoZIhvcNAQELBQADgYEAvpLSbPuBJ9VbGssbbu0JdBpV/crR
+x1sVyJ06M1eriu9Y62cV6gJpFihn4Iv104XNlPFXORqd8SQQNa8ljD2KXf6UCAYp
+/kcP8k6e0xkLar6456IpBv9Wjbbi+4CCpK8sX8fdGCmhyDlrBzD9ix0W/TURq3xK
+oc9CHTH5lsWcmzc=
+-----END X509 CRL-----
+`)
+	cfg := &config.Config{
+		Ca: config.CaConfig{
+			Cert:       testCaCert,
+			Key:        testCaKeyEnc,
+			Passphrase: testCaKeyEncPassphrase,
+		},
+	}
+	c, err := New(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error creating CA: %s", err)
+	}
+	crlBytes, err := c.GenerateCRL(testRevokedCerts, testIssuedTime, testExpireTime)
+	if err != nil {
+		t.Fatalf("unexpected error generating CRL: %s", err)
+	}
+	tmpCrl := strings.TrimSpace(string(crlBytes))
+	if tmpCrl != expectedCrl {
+		t.Fatalf("did not get expected CRL content\n     got:\n%s\n  wanted:\n%s", tmpCrl, expectedCrl)
 	}
 }
