@@ -123,13 +123,11 @@ func (c *Ca) loadKey(cfg *config.Config) error {
 }
 
 func (c *Ca) GenerateClientCert(clientName string) (*ClientCert, error) {
-	// Hash client name using blake2b-160 to use as cert serial number
-	hasher, _ := blake2b.New(20, nil)
-	hasher.Write([]byte(clientName))
-	clientNameHash := hasher.Sum(nil)
+	// Generate cert serial number from client name
+	clientSerial := ClientNameToSerialNumber([]byte(clientName))
 	// Cert template
 	cert := &x509.Certificate{
-		SerialNumber: new(big.Int).SetBytes(clientNameHash),
+		SerialNumber: clientSerial,
 		Subject: pkix.Name{
 			CommonName: clientName,
 		},
@@ -202,4 +200,12 @@ func (c *Ca) GenerateCRL(revokedCerts []pkix.RevokedCertificate, issuedTime time
 		},
 	)
 	return ret, nil
+}
+
+func ClientNameToSerialNumber(clientName []byte) *big.Int {
+	// Hash client name using blake2b-160 to use as cert serial number
+	hasher, _ := blake2b.New(20, nil)
+	hasher.Write(clientName)
+	clientNameHash := hasher.Sum(nil)
+	return new(big.Int).SetBytes(clientNameHash)
 }
