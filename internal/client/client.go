@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
@@ -26,6 +27,7 @@ import (
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/blinklabs-io/vpn-indexer/internal/ca"
 	"github.com/blinklabs-io/vpn-indexer/internal/config"
+	"golang.org/x/crypto/blake2b"
 )
 
 const profileTemplate = `
@@ -53,6 +55,7 @@ type Client struct {
 	config *config.Config
 	ca     *ca.Ca
 	name   string
+	id     string
 }
 
 func New(cfg *config.Config, caObj *ca.Ca, name string) *Client {
@@ -63,16 +66,16 @@ func New(cfg *config.Config, caObj *ca.Ca, name string) *Client {
 	}
 }
 
-func (c *Client) Generate(host string, port int) error {
+func (c *Client) Generate(host string, port int) (string, error) {
 	if ok, err := c.ProfileExists(); err != nil {
-		return err
+		return "", err
 	} else if ok {
-		return nil
+		return c.identifier(), nil
 	}
 	// Generate certs for client
-	certs, err := c.ca.GenerateClientCert(c.name)
+	certs, err := c.ca.GenerateClientCert(c.identifier())
 	if err != nil {
-		return err
+		return "", err
 	}
 	// Generate profile from template
 	profile := fmt.Sprintf(
@@ -86,7 +89,7 @@ func (c *Client) Generate(host string, port int) error {
 	// Upload profile to S3
 	svc, err := c.createS3Client()
 	if err != nil {
-		return err
+		return "", err
 	}
 	_, err = svc.PutObject(
 		context.TODO(),
@@ -97,9 +100,9 @@ func (c *Client) Generate(host string, port int) error {
 		},
 	)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return c.identifier(), nil
 }
 
 func (c *Client) ProfileExists() (bool, error) {
@@ -129,7 +132,7 @@ func (c *Client) profileKey() string {
 	return fmt.Sprintf(
 		"%s%s.ovpn",
 		c.config.S3.ClientKeyPrefix,
-		c.name,
+		c.identifier(),
 	)
 }
 
@@ -138,6 +141,30 @@ func (c *Client) createS3Client() (*s3.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	client := s3.NewFromConfig(cfg)
+	var clientOpts []func(o *s3.Options)
+	if c.config.S3.Endpoint != "" {
+		clientOpts = append(
+			clientOpts,
+			func(o *s3.Options) {
+				o.BaseEndpoint = aws.String(c.config.S3.Endpoint)
+				// This is needed for local minio
+				o.UsePathStyle = true
+			},
+		)
+	}
+	client := s3.NewFromConfig(cfg, clientOpts...)
 	return client, nil
+}
+
+func (c *Client) identifier() string {
+	// Returned cached response
+	if c.id != "" {
+		return c.id
+	}
+	// Create blake2b-256 hash from client name and encode as hex
+	hasher, _ := blake2b.New(32, nil)
+	hasher.Write([]byte(c.name))
+	hash := hasher.Sum(nil)
+	c.id = hex.EncodeToString(hash)
+	return c.id
 }

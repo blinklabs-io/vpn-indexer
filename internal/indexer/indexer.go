@@ -245,14 +245,14 @@ func (i *Indexer) handleEvent(evt event.Event) error {
 				string(clientDatum.Region),
 				i.cfg.Vpn.Domain,
 			)
-			if err := tmpClient.Generate(vpnHost, i.cfg.Vpn.Port); err != nil {
+			clientId, err := tmpClient.Generate(vpnHost, i.cfg.Vpn.Port)
+			if err != nil {
 				return err
 			}
 			i.logger.Info(
 				fmt.Sprintf(
-					"generated client '%s' (%x)",
-					clientDatum.ClientName,
-					clientDatum.ClientName,
+					"generated client %s",
+					clientId,
 				),
 			)
 		}

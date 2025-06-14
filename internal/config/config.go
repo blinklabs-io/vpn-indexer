@@ -17,6 +17,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/kelseyhightower/envconfig"
 	"gopkg.in/yaml.v3"
@@ -31,6 +32,7 @@ type Config struct {
 	Ca       CaConfig       `yaml:"ca"`
 	S3       S3Config       `yaml:"s3"`
 	Vpn      VpnConfig      `yaml:"vpn"`
+	Crl      CrlConfig      `yaml:"crl"`
 }
 
 type LoggingConfig struct {
@@ -74,11 +76,21 @@ type CaConfig struct {
 type S3Config struct {
 	ClientBucket    string `yaml:"clientBucket" envconfig:"S3_CLIENT_BUCKET"`
 	ClientKeyPrefix string `yaml:"clientKeyPrefix" envconfig:"S3_CLIENT_KEY_PREFIX"`
+	Endpoint        string `yaml:"endpoint" envconfig:"S3_ENDPOINT"`
 }
 
 type VpnConfig struct {
 	Domain string `yaml:"domain"`
 	Port   int    `yaml:"port"`
+}
+
+type CrlConfig struct {
+	UpdateInterval     time.Duration `yaml:"updateInterval" envconfig:"CRL_UPDATE_INTERVAL"`
+	RevokeSerials      []string      `yaml:"revokeSerials" envconfig:"CRL_REVOKE_SERIALS"`
+	RevokeTime         time.Time     `yaml:"revokeTime" envconfig:"CRL_REVOKE_TIME"`
+	ConfigMapNamespace string        `yaml:"configMapNamespace" envconfig:"CRL_CONFIGMAP_NAMESPACE"`
+	ConfigMapName      string        `yaml:"configMapName" envconfig:"CRL_CONFIGMAP_NAME"`
+	ConfigMapKey       string        `yaml:"configMapKey" envconfig:"CRL_CONFIGMAP_KEY"`
 }
 
 // Singleton config instance with default values
@@ -107,6 +119,11 @@ var globalConfig = &Config{
 	Vpn: VpnConfig{
 		Domain: "test.domain",
 		Port:   443,
+	},
+	Crl: CrlConfig{
+		UpdateInterval: 60 * time.Minute,
+		// The actual doesn't matter, but we want a consistent value for any custom revoked certs
+		RevokeTime: time.Date(2025, 06, 11, 15, 45, 03, 0, time.UTC),
 	},
 }
 
