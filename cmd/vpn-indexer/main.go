@@ -25,6 +25,7 @@ import (
 
 	"github.com/blinklabs-io/vpn-indexer/internal/ca"
 	"github.com/blinklabs-io/vpn-indexer/internal/config"
+	"github.com/blinklabs-io/vpn-indexer/internal/crl"
 	"github.com/blinklabs-io/vpn-indexer/internal/database"
 	"github.com/blinklabs-io/vpn-indexer/internal/indexer"
 	"github.com/blinklabs-io/vpn-indexer/internal/version"
@@ -149,6 +150,15 @@ func main() {
 	if err != nil {
 		slog.Error(
 			fmt.Sprintf("failed to configure CA: %s", err),
+		)
+		os.Exit(1)
+	}
+
+	// Configure CRL
+	_, err = crl.New(cfg, logger, db, ca)
+	if err != nil {
+		slog.Error(
+			fmt.Sprintf("failed to configure CRL: %s", err),
 		)
 		os.Exit(1)
 	}

@@ -45,3 +45,12 @@ func (d *Database) AddClient(
 	}
 	return nil
 }
+
+func (d *Database) ExpiredClients() ([]Client, error) {
+	var ret []Client
+	result := d.db.Where("expiration < datetime('now')").Order("expiration").Find(&ret)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return ret, nil
+}
