@@ -41,6 +41,7 @@ EOF
 set -x
 helm uninstall --wait -n ${_namespace} minio || true
 helm install \
+	--create-namespace \
 	--wait \
 	-n ${_namespace} \
 	minio \

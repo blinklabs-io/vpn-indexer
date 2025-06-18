@@ -23,6 +23,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/blinklabs-io/vpn-indexer/internal/api"
 	"github.com/blinklabs-io/vpn-indexer/internal/ca"
 	"github.com/blinklabs-io/vpn-indexer/internal/config"
 	"github.com/blinklabs-io/vpn-indexer/internal/crl"
@@ -167,6 +168,16 @@ func main() {
 	if err := indexer.GetIndexer().Start(cfg, logger, db, ca); err != nil {
 		slog.Error(
 			fmt.Sprintf("failed to start indexer: %s", err),
+		)
+		os.Exit(1)
+	}
+
+	// Start API listener
+	if err := api.Start(cfg, db); err != nil {
+		slog.Error(
+			"failed to start API:",
+			"error",
+			err,
 		)
 		os.Exit(1)
 	}

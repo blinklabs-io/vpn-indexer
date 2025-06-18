@@ -33,6 +33,7 @@ type Config struct {
 	S3       S3Config       `yaml:"s3"`
 	Vpn      VpnConfig      `yaml:"vpn"`
 	Crl      CrlConfig      `yaml:"crl"`
+	Api      ApiConfig      `yaml:"api"`
 }
 
 type LoggingConfig struct {
@@ -93,6 +94,12 @@ type CrlConfig struct {
 	ConfigMapKey       string        `yaml:"configMapKey" envconfig:"CRL_CONFIGMAP_KEY"`
 }
 
+type ApiConfig struct {
+	ListenAddress  string `yaml:"address" envconfig:"API_LISTEN_ADDRESS"`
+	ListenPort     uint   `yaml:"port"    envconfig:"API_LISTEN_PORT"`
+	LogHealthcheck bool   `yaml:"logHealthcheck" envconfig:"API_LOG_HEALTHCHECK"`
+}
+
 // Singleton config instance with default values
 var globalConfig = &Config{
 	Logging: LoggingConfig{
@@ -124,6 +131,10 @@ var globalConfig = &Config{
 		UpdateInterval: 60 * time.Minute,
 		// The actual doesn't matter, but we want a consistent value for any custom revoked certs
 		RevokeTime: time.Date(2025, 06, 11, 15, 45, 03, 0, time.UTC),
+	},
+	Api: ApiConfig{
+		ListenPort:     8080,
+		LogHealthcheck: true,
 	},
 }
 
