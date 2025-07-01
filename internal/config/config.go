@@ -114,11 +114,11 @@ var globalConfig = &Config{
 		ListenPort:    8081,
 	},
 	Indexer: IndexerConfig{
-		Network: "preview",
-		// NOTE: these values correspond to the block before the first TXs with datum in the test wallet
-		IntersectSlot: 82_326_620,
-		IntersectHash: "187b93d84418e56b4e5a26eebffa5f64af67230e8706ae27e0d0599178b01f77",
-		ScriptAddress: "addr_test1qqawz5hm2tchtmarkfn2tamzvd2spatl89gtutgra6zwc3ktqj7p944ckc9lq7u36jrq99znwhzlq6jfv2j4ql92m4rq07hp8t",
+		Network: "preprod",
+		// NOTE: these values correspond to the block before the script used below appears on-chain
+		IntersectSlot: 95_150_168,
+		IntersectHash: "bbb8595e68893da96b2faa8a9b5dd7cfbcc1b703a4aba24bec7e747a67cfb0fe",
+		ScriptAddress: "addr_test1zq5qjs3e472czsg6aj672z8zmd5dxynuggqguyckuz8uz62jduk3c6ecrpkrk8qqlr4ep37cx03ytlcn70n93zyemj6sr5gmrj",
 	},
 	Database: DatabaseConfig{
 		Directory: "./.vpn-indexer",
