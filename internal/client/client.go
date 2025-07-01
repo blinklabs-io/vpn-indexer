@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -126,6 +127,27 @@ func (c *Client) ProfileExists() (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func (c *Client) PresignedUrl() (string, error) {
+	svc, err := c.createS3Client()
+	if err != nil {
+		return "", err
+	}
+	presignClient := s3.NewPresignClient(svc)
+	request, err := presignClient.PresignGetObject(
+		context.Background(),
+		&s3.GetObjectInput{
+			Bucket: aws.String(c.config.S3.ClientBucket),
+			Key:    aws.String(c.profileKey()),
+		}, func(opts *s3.PresignOptions) {
+			opts.Expires = time.Duration(5 * int64(time.Minute))
+		},
+	)
+	if err != nil {
+		return "", err
+	}
+	return request.URL, nil
 }
 
 func (c *Client) profileKey() string {

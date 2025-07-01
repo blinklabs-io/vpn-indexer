@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/blinklabs-io/vpn-indexer/internal/ca"
 	"github.com/blinklabs-io/vpn-indexer/internal/config"
 	"github.com/blinklabs-io/vpn-indexer/internal/database"
 )
@@ -31,17 +32,19 @@ const (
 type Api struct {
 	cfg *config.Config
 	db  *database.Database
+	ca  *ca.Ca
 }
 
 var api *Api
 
-func Start(cfg *config.Config, db *database.Database) error {
+func Start(cfg *config.Config, db *database.Database, ca *ca.Ca) error {
 	logger := slog.Default()
 	logger.Info("initializing API server")
 
 	api = &Api{
 		cfg: cfg,
 		db:  db,
+		ca:  ca,
 	}
 
 	//
@@ -54,6 +57,7 @@ func Start(cfg *config.Config, db *database.Database) error {
 
 	// API routes
 	mainMux.HandleFunc("/api/client/list", api.handleClientList)
+	mainMux.HandleFunc("/api/client/profile", api.handleClientProfile)
 
 	// Wrap the mainMux with an access-logging middleware
 	mainHandler := api.logMiddleware(mainMux, logger)
