@@ -17,6 +17,7 @@ package api
 import (
 	"encoding/hex"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -53,6 +54,11 @@ func (a *Api) handleClientList(w http.ResponseWriter, r *http.Request) {
 	}
 	clients, err := a.db.ClientsByCredential(paymentKeyHash)
 	if err != nil {
+		slog.Error(
+			"failed to lookup client in database",
+			"error",
+			err,
+		)
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(`{"error":"Internal server error"}`))
 		return
@@ -62,7 +68,7 @@ func (a *Api) handleClientList(w http.ResponseWriter, r *http.Request) {
 		tmpResp = append(
 			tmpResp,
 			ClientListResponse{
-				Id:         hex.EncodeToString([]byte(client.Name)),
+				Id:         hex.EncodeToString(client.AssetName),
 				Expiration: client.Expiration,
 				Region:     string(client.Region),
 			},

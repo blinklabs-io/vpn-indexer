@@ -28,6 +28,7 @@ import (
 	output_embedded "github.com/blinklabs-io/adder/output/embedded"
 	"github.com/blinklabs-io/adder/pipeline"
 	"github.com/blinklabs-io/gouroboros/cbor"
+	lcommon "github.com/blinklabs-io/gouroboros/ledger/common"
 	ocommon "github.com/blinklabs-io/gouroboros/protocol/common"
 	"github.com/blinklabs-io/vpn-indexer/internal/ca"
 	"github.com/blinklabs-io/vpn-indexer/internal/client"
@@ -58,6 +59,7 @@ type Indexer struct {
 	ca           *ca.Ca
 	logger       *slog.Logger
 	pipeline     *pipeline.Pipeline
+	scriptHash   lcommon.Blake2b224
 	tipReached   bool
 	syncLogTimer *time.Timer
 	syncStatus   input_chainsync.ChainSyncStatus
@@ -71,6 +73,12 @@ func (i *Indexer) Start(cfg *config.Config, logger *slog.Logger, db *database.Da
 	i.db = db
 	i.ca = ca
 	i.logger = logger
+	// Parse script address to determine client asset policy ID
+	scriptAddr, err := lcommon.NewAddress(cfg.Indexer.ScriptAddress)
+	if err != nil {
+		return fmt.Errorf("decode script address: %w", err)
+	}
+	i.scriptHash = scriptAddr.PaymentKeyHash()
 	// Create pipeline
 	i.pipeline = pipeline.New()
 	// Configure pipeline input
@@ -228,10 +236,26 @@ func (i *Indexer) handleEvent(evt event.Event) error {
 				)
 				continue
 			}
+			// Determine attached asset name
+			var assetName []byte
+			if tmpAssets := txOutput.Output.Assets(); tmpAssets != nil {
+				if assets := tmpAssets.Assets(i.scriptHash); len(assets) > 0 {
+					assetName = assets[0]
+				}
+			}
+			if len(assetName) == 0 {
+				i.logger.Warn(
+					fmt.Sprintf(
+						"ignoring datum without expected asset in %s",
+						txOutput.Id.String(),
+					),
+				)
+				continue
+			}
 			// Record client datum in database
 			err := i.db.AddClient(
-				string(clientDatum.ClientName),
-				time.Unix(int64(clientDatum.Expiration), 0),
+				assetName,
+				time.Unix(int64(clientDatum.Expiration/1000), 0),
 				clientDatum.Credential,
 				string(clientDatum.Region),
 			)
@@ -239,7 +263,7 @@ func (i *Indexer) handleEvent(evt event.Event) error {
 				return err
 			}
 			// Generate client
-			tmpClient := client.New(i.cfg, i.ca, string(clientDatum.ClientName))
+			tmpClient := client.New(i.cfg, i.ca, assetName)
 			vpnHost := fmt.Sprintf(
 				"%s.%s",
 				string(clientDatum.Region),

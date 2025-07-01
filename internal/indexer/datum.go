@@ -22,10 +22,9 @@ import (
 
 type ClientDatum struct {
 	cbor.StructAsArray
-	ClientName []byte
-	Expiration uint
 	Credential []byte
 	Region     []byte
+	Expiration uint
 }
 
 func (d *ClientDatum) UnmarshalCBOR(data []byte) error {
@@ -33,7 +32,7 @@ func (d *ClientDatum) UnmarshalCBOR(data []byte) error {
 	if _, err := cbor.Decode(data, &tmpConstr); err != nil {
 		return err
 	}
-	if tmpConstr.Constructor() != 0 {
+	if tmpConstr.Constructor() != 1 {
 		return errors.New("invalid constructor")
 	}
 	type tClientDatum ClientDatum

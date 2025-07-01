@@ -52,17 +52,17 @@ persist-tun
 `
 
 type Client struct {
-	config *config.Config
-	ca     *ca.Ca
-	name   string
-	id     string
+	config    *config.Config
+	ca        *ca.Ca
+	assetName []byte
+	id        string
 }
 
-func New(cfg *config.Config, caObj *ca.Ca, name string) *Client {
+func New(cfg *config.Config, caObj *ca.Ca, assetName []byte) *Client {
 	return &Client{
-		config: cfg,
-		ca:     caObj,
-		name:   name,
+		config:    cfg,
+		ca:        caObj,
+		assetName: assetName,
 	}
 }
 
@@ -163,7 +163,7 @@ func (c *Client) identifier() string {
 	}
 	// Create blake2b-256 hash from client name and encode as hex
 	hasher, _ := blake2b.New(32, nil)
-	hasher.Write([]byte(c.name))
+	hasher.Write(c.assetName)
 	hash := hasher.Sum(nil)
 	c.id = hex.EncodeToString(hash)
 	return c.id

@@ -18,7 +18,7 @@ import "time"
 
 type Client struct {
 	ID         uint   `gorm:"primaryKey"`
-	Name       string `gorm:"index"`
+	AssetName  []byte `gorm:"index"`
 	Expiration time.Time
 	Credential []byte
 	Region     string
@@ -29,13 +29,13 @@ func (Client) TableName() string {
 }
 
 func (d *Database) AddClient(
-	clientName string,
+	assetName []byte,
 	expiration time.Time,
 	credential []byte,
 	region string,
 ) error {
 	tmpItem := Client{
-		Name:       clientName,
+		AssetName:  assetName,
 		Expiration: expiration,
 		Credential: credential,
 		Region:     region,
