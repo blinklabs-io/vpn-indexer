@@ -29,6 +29,8 @@ import (
 	gormlogger "gorm.io/gorm/logger"
 )
 
+var ErrRecordNotFound = gorm.ErrRecordNotFound
+
 type Database struct {
 	db     *gorm.DB
 	logger *slog.Logger

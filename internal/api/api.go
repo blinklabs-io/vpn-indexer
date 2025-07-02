@@ -58,6 +58,7 @@ func Start(cfg *config.Config, db *database.Database, ca *ca.Ca) error {
 	// API routes
 	mainMux.HandleFunc("/api/client/list", api.handleClientList)
 	mainMux.HandleFunc("/api/client/profile", api.handleClientProfile)
+	mainMux.HandleFunc("/api/client/available", api.handleClientAvailable)
 
 	// Wrap the mainMux with an access-logging middleware
 	mainHandler := api.logMiddleware(mainMux, logger)
