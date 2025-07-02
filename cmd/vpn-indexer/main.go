@@ -173,7 +173,7 @@ func main() {
 	}
 
 	// Start API listener
-	if err := api.Start(cfg, db); err != nil {
+	if err := api.Start(cfg, db, ca); err != nil {
 		slog.Error(
 			"failed to start API:",
 			"error",

@@ -13,6 +13,7 @@ require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.22.0
+	github.com/veraison/go-cose v1.3.0
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/crypto v0.39.0

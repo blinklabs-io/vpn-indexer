@@ -63,3 +63,12 @@ func (d *Database) ClientsByCredential(paymentKeyHash []byte) ([]Client, error) 
 	}
 	return ret, nil
 }
+
+func (d *Database) ClientByAssetName(assetName []byte) (Client, error) {
+	var ret Client
+	result := d.db.Where("asset_name = ?", assetName).First(&ret)
+	if result.Error != nil {
+		return ret, result.Error
+	}
+	return ret, nil
+}
