@@ -27,6 +27,7 @@ import (
 
 	lcommon "github.com/blinklabs-io/gouroboros/ledger/common"
 	"github.com/blinklabs-io/vpn-indexer/internal/client"
+	"github.com/blinklabs-io/vpn-indexer/internal/database"
 	"github.com/veraison/go-cose"
 )
 
@@ -245,4 +246,63 @@ func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, url, http.StatusFound)
+}
+
+type ClientAvailableRequest struct {
+	Id string `json:"id"`
+}
+
+func (a *Api) handleClientAvailable(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req ClientAvailableRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":"Invalid request"}`))
+		return
+	}
+
+	// Lookup client in database
+	assetName, err := hex.DecodeString(req.Id)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":"Invalid request"}`))
+		return
+	}
+	if _, err = a.db.ClientByAssetName(assetName); err != nil {
+		if errors.Is(err, database.ErrRecordNotFound) {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		slog.Error(
+			"failed to lookup client in database",
+			"error",
+			err,
+		)
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"error":"Internal server error"}`))
+		return
+	}
+
+	// Check that profile is available
+	client := client.New(a.cfg, a.ca, assetName)
+	ok, err := client.ProfileExists()
+	if err != nil {
+		slog.Error(
+			"failed to check if profile exists",
+			"error",
+			err,
+		)
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"error":"Internal server error"}`))
+		return
+	}
+	if ok {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+	}
 }
