@@ -7,6 +7,11 @@ _basedir=$(cd $(dirname $0)/..; pwd -P)
 _cluster_name=vpn-indexer
 _namespace=vpn-test
 
+if [[ ! $KUPO_URL || ! $OGMIOS_URL ]]; then
+	echo "You must specify the KUPO_URL and OGMIOS_URL env vars for local testing"
+	exit 1
+fi
+
 if ! which k3d &>/dev/null; then
 	echo "Could not find required 'k3d' binary"
 	exit 1
@@ -18,10 +23,16 @@ trap 'rm -rf ${_tmpdir}' EXIT
 
 cd ${_basedir}
 
+# Build image
+(
+set -x
+docker build -t blinklabs-io/vpn-indexer .
+)
+
 # Create cluster
 (
 set -x
-( k3d cluster get ${_cluster_name} &>/dev/null && k3d kubeconfig merge ${_cluster_name} ) || k3d cluster create ${_cluster_name}
+( k3d cluster get ${_cluster_name} &>/dev/null && (k3d kubeconfig merge ${_cluster_name} && kubectl config use-context k3d-${_cluster_name}) ) || k3d cluster create ${_cluster_name}
 )
 
 # Install minio
@@ -49,12 +60,6 @@ helm install \
 	--values ${_tmpdir}/minio-values.yaml
 )
 
-# Build image
-(
-set -x
-docker build -t blinklabs-io/vpn-indexer .
-)
-
 # Import image into k3d cluster
 (
 set -x
@@ -72,6 +77,9 @@ extraEnv:
   AWS_REGION: us-east-1
   AWS_ACCESS_KEY_ID: testuser
   AWS_SECRET_ACCESS_KEY: testpass
+  # TODO: replace me with explicit param in helm chart
+  TXBUILDER_KUPO_URL: ${KUPO_URL}
+  TXBUILDER_OGMIOS_URL: ${OGMIOS_URL}
 ca:
   # The CA cert/key are the same ones used in the CA unit tests
   cert: |

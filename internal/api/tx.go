@@ -15,31 +15,48 @@
 package api
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"log/slog"
 	"net/http"
+
+	"github.com/blinklabs-io/vpn-indexer/internal/txbuilder"
 )
 
-type RefDataResponse struct {
-	Prices  []RefDataResponsePrice `json:"prices"`
-	Regions []string               `json:"regions"`
+type TxSignupRequest struct {
+	ClientAddress string `json:"clientAddress"`
+	Price         int    `json:"price"`
+	Duration      int    `json:"duration"`
+	Region        string `json:"region"`
 }
 
-type RefDataResponsePrice struct {
-	Duration int `json:"duration"`
-	Price    int `json:"price"`
+type TxSignupResponse struct {
+	TxCbor string `json:"txCbor"`
 }
 
-func (a *Api) handleRefData(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+func (a *Api) handleTxSignup(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	refData, err := a.db.ReferenceData()
+	var req TxSignupRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":"Invalid request"}`))
+		return
+	}
+
+	txCbor, err := txbuilder.BuildSignupTx(
+		a.db,
+		req.ClientAddress,
+		req.Price,
+		req.Duration,
+		req.Region,
+	)
 	if err != nil {
 		slog.Error(
-			"failed to lookup reference data in database",
+			"failed to build signup TX",
 			"error",
 			err,
 		)
@@ -48,23 +65,8 @@ func (a *Api) handleRefData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var tmpResp RefDataResponse
-	tmpResp.Prices = make([]RefDataResponsePrice, 0, len(refData.Prices))
-	for _, price := range refData.Prices {
-		tmpResp.Prices = append(
-			tmpResp.Prices,
-			RefDataResponsePrice{
-				Duration: price.Duration,
-				Price:    price.Price,
-			},
-		)
-	}
-	tmpResp.Regions = make([]string, 0, len(refData.Regions))
-	for _, region := range refData.Regions {
-		tmpResp.Regions = append(
-			tmpResp.Regions,
-			region.Name,
-		)
+	tmpResp := TxSignupResponse{
+		TxCbor: hex.EncodeToString(txCbor),
 	}
 	w.Header().Set("Content-Type", "application/json")
 	resp, _ := json.Marshal(tmpResp)

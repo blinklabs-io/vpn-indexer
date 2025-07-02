@@ -69,8 +69,8 @@ func (d *ReferenceDatum) UnmarshalCBOR(data []byte) error {
 
 type ReferenceDatumPricing struct {
 	cbor.StructAsArray
-	Duration uint64
-	Price    uint64
+	Duration int
+	Price    int
 }
 
 func (p *ReferenceDatumPricing) UnmarshalCBOR(data []byte) error {
