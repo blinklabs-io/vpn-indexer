@@ -191,6 +191,55 @@
                     }
                 }
             }
+        },
+        "/api/tx/signup": {
+            "post": {
+                "description": "Build a transaction for a VPN signup",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "TxSignup",
+                "parameters": [
+                    {
+                        "description": "Signup Request",
+                        "name": "TxSignupRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.TxSignupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Built transaction",
+                        "schema": {
+                            "$ref": "#/definitions/api.TxSignupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -252,6 +301,31 @@
                 },
                 "price": {
                     "type": "integer"
+                }
+            }
+        },
+        "api.TxSignupRequest": {
+            "type": "object",
+            "properties": {
+                "clientAddress": {
+                    "type": "string"
+                },
+                "duration": {
+                    "type": "integer"
+                },
+                "price": {
+                    "type": "integer"
+                },
+                "region": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.TxSignupResponse": {
+            "type": "object",
+            "properties": {
+                "txCbor": {
+                    "type": "string"
                 }
             }
         }

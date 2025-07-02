@@ -27,7 +27,7 @@ const (
 type Reference struct {
 	ID        uint `gorm:"primaryKey"`
 	TxId      []byte
-	OutputIdx uint32
+	OutputIdx int
 	Prices    []ReferencePrice
 	Regions   []ReferenceRegion
 }
@@ -39,8 +39,8 @@ func (Reference) TableName() string {
 type ReferencePrice struct {
 	ID          uint `gorm:"primaryKey"`
 	ReferenceID uint
-	Duration    uint64
-	Price       uint64
+	Duration    int
+	Price       int
 }
 
 type ReferenceRegion struct {
@@ -77,7 +77,7 @@ func (d *Database) UpdateReferenceData(
 	}
 	tmpItem := Reference{
 		TxId:      txOutputId.Id().Bytes(),
-		OutputIdx: txOutputId.Index(),
+		OutputIdx: int(txOutputId.Index()),
 		Prices:    prices,
 		Regions:   tmpRegions,
 	}
