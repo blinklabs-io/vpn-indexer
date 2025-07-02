@@ -24,16 +24,17 @@ import (
 )
 
 type Config struct {
-	Logging  LoggingConfig  `yaml:"logging"`
-	Metrics  MetricsConfig  `yaml:"metrics"`
-	Debug    DebugConfig    `yaml:"debug"`
-	Indexer  IndexerConfig  `yaml:"indexer"`
-	Database DatabaseConfig `yaml:"database"`
-	Ca       CaConfig       `yaml:"ca"`
-	S3       S3Config       `yaml:"s3"`
-	Vpn      VpnConfig      `yaml:"vpn"`
-	Crl      CrlConfig      `yaml:"crl"`
-	Api      ApiConfig      `yaml:"api"`
+	Logging   LoggingConfig   `yaml:"logging"`
+	Metrics   MetricsConfig   `yaml:"metrics"`
+	Debug     DebugConfig     `yaml:"debug"`
+	Indexer   IndexerConfig   `yaml:"indexer"`
+	Database  DatabaseConfig  `yaml:"database"`
+	Ca        CaConfig        `yaml:"ca"`
+	S3        S3Config        `yaml:"s3"`
+	Vpn       VpnConfig       `yaml:"vpn"`
+	Crl       CrlConfig       `yaml:"crl"`
+	Api       ApiConfig       `yaml:"api"`
+	TxBuilder TxBuilderConfig `yaml:"txBuilder"`
 }
 
 type LoggingConfig struct {
@@ -101,6 +102,13 @@ type ApiConfig struct {
 	LogHealthcheck bool   `yaml:"logHealthcheck" envconfig:"API_LOG_HEALTHCHECK"`
 }
 
+type TxBuilderConfig struct {
+	KupoUrl         string `yaml:"kupoUrl" envconfig:"TXBUILDER_KUPO_URL"`
+	OgmiosUrl       string `yaml:"ogmiosUrl" envconfig:"TXBUILDER_OGMIOS_URL"`
+	ProviderAddress string `yaml:"providerAddress" envconfig:"TXBUILDER_PROVIDER_ADDRESS"`
+	ScriptRefInput  string `yaml:"scriptRefInput" envconfig:"TXBUILDER_SCRIPT_REF_INPUT"`
+}
+
 // Singleton config instance with default values
 var globalConfig = &Config{
 	Logging: LoggingConfig{
@@ -116,11 +124,11 @@ var globalConfig = &Config{
 	},
 	Indexer: IndexerConfig{
 		Network: "preprod",
-		// NOTE: these values correspond to the block before the script used below appears on-chain
-		IntersectSlot:  95_150_168,
-		IntersectHash:  "bbb8595e68893da96b2faa8a9b5dd7cfbcc1b703a4aba24bec7e747a67cfb0fe",
-		ScriptAddress:  "addr_test1zq5qjs3e472czsg6aj672z8zmd5dxynuggqguyckuz8uz62jduk3c6ecrpkrk8qqlr4ep37cx03ytlcn70n93zyemj6sr5gmrj",
-		ReferenceToken: "4481fb794c89d84faec248eeb50543f2b321946e7a5ecaff0ded4455.61646d696e",
+		// NOTE: these values correspond to the block before the reference token and/or script used below appear on-chain
+		IntersectSlot:  97_153_054,
+		IntersectHash:  "833506cade5ebd129065f76bc13260147e185797e0f265658499b6d57fe5b584",
+		ScriptAddress:  "addr_test1zrmx2wvrdqurqgp2wg4v8v9g27zugxezyt75as9zkycyda2jduk3c6ecrpkrk8qqlr4ep37cx03ytlcn70n93zyemj6s4mgt63",
+		ReferenceToken: "85b95fee1b7cf6f2a7dca818e77b901ff3c1b6aae4473219cf56902b.61646d696e",
 	},
 	Database: DatabaseConfig{
 		Directory: "./.vpn-indexer",
@@ -137,6 +145,11 @@ var globalConfig = &Config{
 	Api: ApiConfig{
 		ListenPort:     8080,
 		LogHealthcheck: true,
+	},
+	TxBuilder: TxBuilderConfig{
+		// NOTE: this shares a stake key with the indexer script address
+		ProviderAddress: "addr_test1qpjwevqy6mh5hsnudjgpgrtfjwwxdtl7d73e9u0kxg9453jjduk3c6ecrpkrk8qqlr4ep37cx03ytlcn70n93zyemj6sasxnj5",
+		ScriptRefInput:  "3588c6f7d5fbd80b6bfc2ad2d6ad595a7fc750361909f89cf2e911519d1fbdea#0",
 	},
 }
 

@@ -28,8 +28,8 @@ type RefDataResponse struct {
 
 // RefDataResponsePrice provides the price for a given duration
 type RefDataResponsePrice struct {
-	Duration uint64 `json:"duration"`
-	Price    uint64 `json:"price"`
+	Duration int `json:"duration"`
+	Price    int `json:"price"`
 }
 
 // handleRefData godoc
