@@ -24,16 +24,17 @@ import (
 )
 
 type Config struct {
-	Logging  LoggingConfig  `yaml:"logging"`
-	Metrics  MetricsConfig  `yaml:"metrics"`
-	Debug    DebugConfig    `yaml:"debug"`
-	Indexer  IndexerConfig  `yaml:"indexer"`
-	Database DatabaseConfig `yaml:"database"`
-	Ca       CaConfig       `yaml:"ca"`
-	S3       S3Config       `yaml:"s3"`
-	Vpn      VpnConfig      `yaml:"vpn"`
-	Crl      CrlConfig      `yaml:"crl"`
-	Api      ApiConfig      `yaml:"api"`
+	Logging   LoggingConfig   `yaml:"logging"`
+	Metrics   MetricsConfig   `yaml:"metrics"`
+	Debug     DebugConfig     `yaml:"debug"`
+	Indexer   IndexerConfig   `yaml:"indexer"`
+	Database  DatabaseConfig  `yaml:"database"`
+	Ca        CaConfig        `yaml:"ca"`
+	S3        S3Config        `yaml:"s3"`
+	Vpn       VpnConfig       `yaml:"vpn"`
+	Crl       CrlConfig       `yaml:"crl"`
+	Api       ApiConfig       `yaml:"api"`
+	TxBuilder TxBuilderConfig `yaml:"txBuilder"`
 }
 
 type LoggingConfig struct {
@@ -100,6 +101,14 @@ type ApiConfig struct {
 	LogHealthcheck bool   `yaml:"logHealthcheck" envconfig:"API_LOG_HEALTHCHECK"`
 }
 
+type TxBuilderConfig struct {
+	KupoUrl         string `yaml:"kupoUrl" envconfig:"TXBUILDER_KUPO_URL"`
+	OgmiosUrl       string `yaml:"ogmiosUrl" envconfig:"TXBUILDER_OGMIOS_URL"`
+	ProviderAddress string `yaml:"providerAddress" envconfig:"TXBUILDER_PROVIDER_ADDRESS"`
+	ReferenceToken  string `yaml:"referenceToken" envconfig:"TXBUILDER_REFERENCE_TOKEN"`
+	ScriptRefInput  string `yaml:"scriptRefInput" envconfig:"TXBUILDER_SCRIPT_REF_INPUT"`
+}
+
 // Singleton config instance with default values
 var globalConfig = &Config{
 	Logging: LoggingConfig{
@@ -135,6 +144,12 @@ var globalConfig = &Config{
 	Api: ApiConfig{
 		ListenPort:     8080,
 		LogHealthcheck: true,
+	},
+	TxBuilder: TxBuilderConfig{
+		// NOTE: this shares a stake key with the indexer script address
+		ProviderAddress: "addr_test1qpjwevqy6mh5hsnudjgpgrtfjwwxdtl7d73e9u0kxg9453jjduk3c6ecrpkrk8qqlr4ep37cx03ytlcn70n93zyemj6sasxnj5",
+		// NOTE: this is the "admin" token in the script
+		ReferenceToken: "4481fb794c89d84faec248eeb50543f2b321946e7a5ecaff0ded4455.61646d696e",
 	},
 }
 
