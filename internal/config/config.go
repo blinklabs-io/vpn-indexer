@@ -59,6 +59,7 @@ type IndexerConfig struct {
 	IntersectSlot      uint64 `yaml:"interceptSlot" envconfig:"INDEXER_INTERSECT_SLOT"`
 	ScriptAddress      string `yaml:"scriptAddress" envconfig:"INDEXER_SCRIPT_ADDRESS"`
 	DelayConfirmations uint   `yaml:"delayConfirmations" envconfig:"INDEXER_DELAY_CONFIRMATIONS"`
+	ReferenceToken     string `yaml:"referenceToken" envconfig:"INDEXER_REFERENCE_TOKEN"`
 }
 
 type DatabaseConfig struct {
@@ -116,9 +117,10 @@ var globalConfig = &Config{
 	Indexer: IndexerConfig{
 		Network: "preprod",
 		// NOTE: these values correspond to the block before the script used below appears on-chain
-		IntersectSlot: 95_150_168,
-		IntersectHash: "bbb8595e68893da96b2faa8a9b5dd7cfbcc1b703a4aba24bec7e747a67cfb0fe",
-		ScriptAddress: "addr_test1zq5qjs3e472czsg6aj672z8zmd5dxynuggqguyckuz8uz62jduk3c6ecrpkrk8qqlr4ep37cx03ytlcn70n93zyemj6sr5gmrj",
+		IntersectSlot:  95_150_168,
+		IntersectHash:  "bbb8595e68893da96b2faa8a9b5dd7cfbcc1b703a4aba24bec7e747a67cfb0fe",
+		ScriptAddress:  "addr_test1zq5qjs3e472czsg6aj672z8zmd5dxynuggqguyckuz8uz62jduk3c6ecrpkrk8qqlr4ep37cx03ytlcn70n93zyemj6sr5gmrj",
+		ReferenceToken: "4481fb794c89d84faec248eeb50543f2b321946e7a5ecaff0ded4455.61646d696e",
 	},
 	Database: DatabaseConfig{
 		Directory: "./.vpn-indexer",

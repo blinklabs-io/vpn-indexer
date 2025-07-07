@@ -43,3 +43,49 @@ func (d *ClientDatum) UnmarshalCBOR(data []byte) error {
 	*d = ClientDatum(tmp)
 	return nil
 }
+
+type ReferenceDatum struct {
+	cbor.StructAsArray
+	Prices  []ReferenceDatumPricing
+	Regions [][]byte
+}
+
+func (d *ReferenceDatum) UnmarshalCBOR(data []byte) error {
+	var tmpConstr cbor.Constructor
+	if _, err := cbor.Decode(data, &tmpConstr); err != nil {
+		return err
+	}
+	if tmpConstr.Constructor() != 0 {
+		return errors.New("invalid constructor")
+	}
+	type tReferenceDatum ReferenceDatum
+	var tmp tReferenceDatum
+	if _, err := cbor.Decode(tmpConstr.FieldsCbor(), &tmp); err != nil {
+		return err
+	}
+	*d = ReferenceDatum(tmp)
+	return nil
+}
+
+type ReferenceDatumPricing struct {
+	cbor.StructAsArray
+	Duration uint64
+	Price    uint64
+}
+
+func (p *ReferenceDatumPricing) UnmarshalCBOR(data []byte) error {
+	var tmpConstr cbor.Constructor
+	if _, err := cbor.Decode(data, &tmpConstr); err != nil {
+		return err
+	}
+	if tmpConstr.Constructor() != 0 {
+		return errors.New("invalid constructor")
+	}
+	type tReferenceDatumPricing ReferenceDatumPricing
+	var tmp tReferenceDatumPricing
+	if _, err := cbor.Decode(tmpConstr.FieldsCbor(), &tmp); err != nil {
+		return err
+	}
+	*p = ReferenceDatumPricing(tmp)
+	return nil
+}
