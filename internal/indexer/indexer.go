@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/blinklabs-io/adder/event"
@@ -54,15 +55,17 @@ var (
 )
 
 type Indexer struct {
-	cfg          *config.Config
-	db           *database.Database
-	ca           *ca.Ca
-	logger       *slog.Logger
-	pipeline     *pipeline.Pipeline
-	scriptHash   lcommon.Blake2b224
-	tipReached   bool
-	syncLogTimer *time.Timer
-	syncStatus   input_chainsync.ChainSyncStatus
+	cfg               *config.Config
+	db                *database.Database
+	ca                *ca.Ca
+	logger            *slog.Logger
+	pipeline          *pipeline.Pipeline
+	refTokenPolicyId  lcommon.Blake2b224
+	refTokenAssetName []byte
+	scriptHash        lcommon.Blake2b224
+	tipReached        bool
+	syncLogTimer      *time.Timer
+	syncStatus        input_chainsync.ChainSyncStatus
 }
 
 // Singleton indexer instance
@@ -79,6 +82,17 @@ func (i *Indexer) Start(cfg *config.Config, logger *slog.Logger, db *database.Da
 		return fmt.Errorf("decode script address: %w", err)
 	}
 	i.scriptHash = scriptAddr.PaymentKeyHash()
+	// Parse reference token to determine policy ID and asset name
+	refTokenParts := strings.SplitN(cfg.Indexer.ReferenceToken, `.`, 2)
+	refTokenPolicyId, err := hex.DecodeString(refTokenParts[0])
+	if err != nil {
+		return fmt.Errorf("decode reference token policy ID hex: %w", err)
+	}
+	i.refTokenPolicyId = lcommon.Blake2b224(refTokenPolicyId)
+	i.refTokenAssetName, err = hex.DecodeString(refTokenParts[1])
+	if err != nil {
+		return fmt.Errorf("decode reference token asset name hex: %w", err)
+	}
 	// Create pipeline
 	i.pipeline = pipeline.New()
 	// Configure pipeline input
@@ -219,70 +233,152 @@ func (i *Indexer) updateStatus(status input_chainsync.ChainSyncStatus) {
 }
 
 func (i *Indexer) handleEvent(evt event.Event) error {
+	cfg := config.GetConfig()
 	switch evtData := evt.Payload.(type) {
 	case input_chainsync.TransactionEvent:
 		for _, txOutput := range evtData.Transaction.Produced() {
-			datum := txOutput.Output.Datum()
-			if datum == nil {
+			// Ignore outputs that aren't to our script address
+			if txOutput.Output.Address().String() != cfg.Indexer.ScriptAddress {
 				continue
 			}
-			var clientDatum ClientDatum
-			if _, err := cbor.Decode(datum.Cbor(), &clientDatum); err != nil {
-				i.logger.Warn(
-					fmt.Sprintf(
-						"ignoring unknown datum format in %s",
-						txOutput.Id.String(),
-					),
-				)
+			tmpAssets := txOutput.Output.Assets()
+			// Ignore outputs that don't contain assets
+			if tmpAssets == nil {
 				continue
 			}
-			// Determine attached asset name
-			var assetName []byte
-			if tmpAssets := txOutput.Output.Assets(); tmpAssets != nil {
-				if assets := tmpAssets.Assets(i.scriptHash); len(assets) > 0 {
-					assetName = assets[0]
+			// Check for reference token
+			if assets := tmpAssets.Assets(i.refTokenPolicyId); len(assets) > 0 {
+				if err := i.handleEventReference(txOutput); err != nil {
+					return err
 				}
 			}
-			if len(assetName) == 0 {
-				i.logger.Warn(
-					fmt.Sprintf(
-						"ignoring datum without expected asset in %s",
-						txOutput.Id.String(),
-					),
-				)
-				continue
+			// Check for assets with policy from script hash
+			if assets := tmpAssets.Assets(i.scriptHash); len(assets) > 0 {
+				if err := i.handleEventClient(txOutput); err != nil {
+					return err
+				}
 			}
-			// Record client datum in database
-			err := i.db.AddClient(
-				assetName,
-				time.Unix(int64(clientDatum.Expiration/1000), 0),
-				clientDatum.Credential,
-				string(clientDatum.Region),
-			)
-			if err != nil {
-				return err
-			}
-			// Generate client
-			tmpClient := client.New(i.cfg, i.ca, assetName)
-			vpnHost := fmt.Sprintf(
-				"%s.%s",
-				string(clientDatum.Region),
-				i.cfg.Vpn.Domain,
-			)
-			clientId, err := tmpClient.Generate(vpnHost, i.cfg.Vpn.Port)
-			if err != nil {
-				return err
-			}
-			i.logger.Info(
-				fmt.Sprintf(
-					"generated client %s",
-					clientId,
-				),
-			)
 		}
 	default:
 		return fmt.Errorf("unexpected event type: %T", evt.Payload)
 	}
+	return nil
+}
+
+func (i *Indexer) handleEventClient(txOutput lcommon.Utxo) error {
+	// Decode datum
+	datum := txOutput.Output.Datum()
+	if datum == nil {
+		i.logger.Warn(
+			fmt.Sprintf(
+				"ignoring missing datum in %s",
+				txOutput.Id.String(),
+			),
+		)
+		return nil
+	}
+	var clientDatum ClientDatum
+	if _, err := cbor.Decode(datum.Cbor(), &clientDatum); err != nil {
+		i.logger.Warn(
+			fmt.Sprintf(
+				"ignoring unknown client datum format in %s",
+				txOutput.Id.String(),
+			),
+		)
+		return nil
+	}
+	// Determine attached asset name
+	var assetName []byte
+	if tmpAssets := txOutput.Output.Assets(); tmpAssets != nil {
+		if assets := tmpAssets.Assets(i.scriptHash); len(assets) > 0 {
+			assetName = assets[0]
+		}
+	}
+	if len(assetName) == 0 {
+		i.logger.Warn(
+			fmt.Sprintf(
+				"ignoring datum without expected asset in %s",
+				txOutput.Id.String(),
+			),
+		)
+		return nil
+	}
+	// Record client datum in database
+	err := i.db.AddClient(
+		assetName,
+		time.Unix(int64(clientDatum.Expiration/1000), 0),
+		clientDatum.Credential,
+		string(clientDatum.Region),
+	)
+	if err != nil {
+		return err
+	}
+	// Generate client
+	tmpClient := client.New(i.cfg, i.ca, assetName)
+	vpnHost := fmt.Sprintf(
+		"%s.%s",
+		string(clientDatum.Region),
+		i.cfg.Vpn.Domain,
+	)
+	clientId, err := tmpClient.Generate(vpnHost, i.cfg.Vpn.Port)
+	if err != nil {
+		return err
+	}
+	i.logger.Info(
+		"generated client",
+		"client",
+		clientId,
+		"tx_output",
+		txOutput.Id.String(),
+	)
+	return nil
+}
+
+func (i *Indexer) handleEventReference(txOutput lcommon.Utxo) error {
+	// Decode datum
+	datum := txOutput.Output.Datum()
+	if datum == nil {
+		i.logger.Warn(
+			fmt.Sprintf(
+				"ignoring missing datum in %s",
+				txOutput.Id.String(),
+			),
+		)
+		return nil
+	}
+	var referenceDatum ReferenceDatum
+	if _, err := cbor.Decode(datum.Cbor(), &referenceDatum); err != nil {
+		i.logger.Warn(
+			fmt.Sprintf(
+				"ignoring unknown reference datum format in %s",
+				txOutput.Id.String(),
+			),
+		)
+		return nil
+	}
+	// Update in database
+	tmpPrices := make([]database.ReferencePrice, 0, len(referenceDatum.Prices))
+	for _, price := range referenceDatum.Prices {
+		tmpPrices = append(
+			tmpPrices,
+			database.ReferencePrice{
+				Duration: price.Duration,
+				Price:    price.Price,
+			},
+		)
+	}
+	tmpRegions := make([]string, 0, len(referenceDatum.Regions))
+	for _, region := range referenceDatum.Regions {
+		tmpRegions = append(tmpRegions, string(region))
+	}
+	if err := i.db.UpdateReferenceData(txOutput.Id, tmpPrices, tmpRegions); err != nil {
+		return fmt.Errorf("update reference in database: %w", err)
+	}
+	i.logger.Info(
+		"updated reference data",
+		"tx_output",
+		txOutput.Id.String(),
+	)
 	return nil
 }
 

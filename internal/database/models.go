@@ -19,4 +19,7 @@ package database
 var MigrateModels = []any{
 	&Client{},
 	&Cursor{},
+	&Reference{},
+	&ReferencePrice{},
+	&ReferenceRegion{},
 }
