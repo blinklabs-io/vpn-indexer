@@ -16,6 +16,7 @@ package database
 
 import (
 	lcommon "github.com/blinklabs-io/gouroboros/ledger/common"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -50,7 +51,10 @@ type ReferenceRegion struct {
 
 func (d *Database) ReferenceData() (Reference, error) {
 	var ret Reference
-	result := d.db.Where("id = ?", referenceId).First(&ret)
+	result := d.db.Where("id = ?", referenceId).
+		Preload("Prices").
+		Preload("Regions").
+		First(&ret)
 	if result.Error != nil {
 		return ret, result.Error
 	}
@@ -77,12 +81,14 @@ func (d *Database) UpdateReferenceData(
 		Prices:    prices,
 		Regions:   tmpRegions,
 	}
-	result := d.db.Clauses(
-		clause.OnConflict{
-			Columns:   []clause.Column{{Name: "id"}},
-			UpdateAll: true,
-		},
-	).Create(&tmpItem)
+	result := d.db.
+		Session(&gorm.Session{FullSaveAssociations: true}).
+		Clauses(
+			clause.OnConflict{
+				Columns:   []clause.Column{{Name: "id"}},
+				UpdateAll: true,
+			},
+		).Create(&tmpItem)
 	if result.Error != nil {
 		return result.Error
 	}
