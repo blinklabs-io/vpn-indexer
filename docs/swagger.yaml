@@ -1,0 +1,169 @@
+basePath: /
+definitions:
+  api.Client:
+    properties:
+      expiration:
+        type: string
+      id:
+        type: string
+      region:
+        type: string
+    type: object
+  api.ClientAvailableRequest:
+    properties:
+      id:
+        type: string
+    type: object
+  api.ClientListRequest:
+    properties:
+      paymentKeyHash:
+        type: string
+    type: object
+  api.ClientProfileRequest:
+    type: object
+  api.RefDataResponse:
+    properties:
+      prices:
+        items:
+          $ref: '#/definitions/api.RefDataResponsePrice'
+        type: array
+      regions:
+        items:
+          type: string
+        type: array
+    type: object
+  api.RefDataResponsePrice:
+    properties:
+      duration:
+        type: integer
+      price:
+        type: integer
+    type: object
+info:
+  contact:
+    email: support@blinklabs.io
+    name: Blink Labs Software
+    url: https://blinklabs.io
+  description: NABU VPN indexer API
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: vpn-indexer
+  version: v0
+paths:
+  /api/client/available:
+    post:
+      consumes:
+      - application/json
+      description: Check if a client profile is available
+      parameters:
+      - description: Client Available Request
+        in: body
+        name: ClientAvailableRequest
+        required: true
+        schema:
+          $ref: '#/definitions/api.ClientAvailableRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "405":
+          description: Method Not Allowed
+          schema:
+            type: string
+        "500":
+          description: Server Error
+          schema:
+            type: string
+      summary: ClientAvailable
+  /api/client/list:
+    post:
+      consumes:
+      - application/json
+      description: Search for clients matching a given manager public key hash
+      parameters:
+      - description: List Request
+        in: body
+        name: ClientListRequest
+        required: true
+        schema:
+          $ref: '#/definitions/api.ClientListRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of matching clients
+          schema:
+            items:
+              $ref: '#/definitions/api.Client'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "405":
+          description: Method Not Allowed
+          schema:
+            type: string
+        "500":
+          description: Server Error
+          schema:
+            type: string
+      summary: ClientList
+  /api/client/profile:
+    post:
+      consumes:
+      - application/json
+      description: Fetch a client VPN profile given a COSE payload via signed S3 link
+      parameters:
+      - description: Profile Request
+        in: body
+        name: ClientProfileRequest
+        required: true
+        schema:
+          $ref: '#/definitions/api.ClientProfileRequest'
+      responses:
+        "302":
+          description: Found
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "405":
+          description: Method Not Allowed
+          schema:
+            type: string
+        "500":
+          description: Server Error
+          schema:
+            type: string
+      summary: ClientProfile
+  /api/refdata:
+    get:
+      consumes:
+      - application/json
+      description: Fetch prices and regions for signup or renewal
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Prices and regions
+          schema:
+            $ref: '#/definitions/api.RefDataResponse'
+        "405":
+          description: Method Not Allowed
+          schema:
+            type: string
+        "500":
+          description: Server Error
+          schema:
+            type: string
+      summary: RefData
+swagger: "2.0"

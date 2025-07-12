@@ -31,17 +31,35 @@ import (
 	"github.com/veraison/go-cose"
 )
 
+// ClientListRequest provides the payment credential hash to search
 type ClientListRequest struct {
 	PaymentKeyHash string `json:"paymentKeyHash"`
 	//StakeKeyHash   string `json:"stakeKeyHash"`
 }
 
-type ClientListResponse struct {
+// Client provides the unique identifier, expiration time, and VPN region for
+// a client
+type Client struct {
 	Id         string    `json:"id"`
 	Expiration time.Time `json:"expiration"`
 	Region     string    `json:"region"`
 }
 
+// ClientListResponse returns a list of Clients matching the search criteria
+type ClientListResponse []Client
+
+// handleClientList godoc
+//
+//	@Summary		ClientList
+//	@Description	Search for clients matching a given manager public key hash
+//	@Produce		json
+//	@Accept			json
+//	@Param			ClientListRequest	body		ClientListRequest	true	"List Request"
+//	@Success		200					{object}	ClientListResponse	"List of matching clients"
+//	@Failure		400					{object}	string				"Bad Request"
+//	@Failure		405					{object}	string				"Method Not Allowed"
+//	@Failure		500					{object}	string				"Server Error"
+//	@Router			/api/client/list [post]
 func (a *Api) handleClientList(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -72,11 +90,11 @@ func (a *Api) handleClientList(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`{"error":"Internal server error"}`))
 		return
 	}
-	tmpResp := make([]ClientListResponse, 0, len(clients))
+	tmpResp := make(ClientListResponse, 0, len(clients))
 	for _, client := range clients {
 		tmpResp = append(
 			tmpResp,
-			ClientListResponse{
+			Client{
 				Id:         hex.EncodeToString(client.AssetName),
 				Expiration: client.Expiration,
 				Region:     string(client.Region),
@@ -88,6 +106,7 @@ func (a *Api) handleClientList(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(resp)
 }
 
+// ClientProfileRequest provides the client ID and COSE payload for verification
 type ClientProfileRequest struct {
 	Id        []byte
 	Signature cose.UntaggedSign1Message
@@ -129,6 +148,17 @@ func (r *ClientProfileRequest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// handleClientProfile godoc
+//
+//	@Summary		ClientProfile
+//	@Description	Fetch a client VPN profile given a COSE payload via signed S3 link
+//	@Accept			json
+//	@Param			ClientProfileRequest	body		ClientProfileRequest	true	"Profile Request"
+//	@Success		302						{string}	string					"Found"
+//	@Failure		400						{object}	string					"Bad Request"
+//	@Failure		405						{object}	string					"Method Not Allowed"
+//	@Failure		500						{object}	string					"Server Error"
+//	@Router			/api/client/profile [post]
 func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -138,7 +168,9 @@ func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 	var req ClientProfileRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(`{"error":"Invalid request","error":"` + err.Error() + `"}`))
+		_, _ = w.Write(
+			[]byte(`{"error":"Invalid request","error":"` + err.Error() + `"}`),
+		)
 		return
 	}
 
@@ -173,23 +205,37 @@ func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Verify challenge string meets requirements
-	challengeClientId := string(req.Signature.Payload[0:len(hex.EncodeToString(req.Id))])
+	challengeClientId := string(
+		req.Signature.Payload[0:len(hex.EncodeToString(req.Id))],
+	)
 	if challengeClientId != hex.EncodeToString(req.Id) {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(`{"error":"Invalid request","reason":"challenge string does not match client ID"}`))
+		_, _ = w.Write(
+			[]byte(
+				`{"error":"Invalid request","reason":"challenge string does not match client ID"}`,
+			),
+		)
 		return
 	}
 	challengeTimestamp := string(req.Signature.Payload[len(challengeClientId):])
 	tmpTimestamp, err := strconv.ParseInt(challengeTimestamp, 10, 64)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(`{"error":"Invalid request","reason":"could not extract timestamp from challenge string"}`))
+		_, _ = w.Write(
+			[]byte(
+				`{"error":"Invalid request","reason":"could not extract timestamp from challenge string"}`,
+			),
+		)
 		return
 	}
 	timestamp := time.Unix(tmpTimestamp, 0)
 	if time.Since(timestamp) > (15 * time.Minute) {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(`{"error":"Invalid request","reason":"challenge string timestamp is too old"}`))
+		_, _ = w.Write(
+			[]byte(
+				`{"error":"Invalid request","reason":"challenge string timestamp is too old"}`,
+			),
+		)
 		return
 	}
 
@@ -218,7 +264,11 @@ func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := req.Signature.Verify(nil, verifier); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(`{"error":"Invalid request","reason":"failed to validate signature"}`))
+		_, _ = w.Write(
+			[]byte(
+				`{"error":"Invalid request","reason":"failed to validate signature"}`,
+			),
+		)
 		return
 	}
 	// Check that signing key matches known client credential
@@ -229,7 +279,11 @@ func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 	)
 	if string(vkeyHash.Bytes()) != string(tmpClient.Credential) {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(`{"error":"Invalid request","reason":"key hash does not match credential for client"}`))
+		_, _ = w.Write(
+			[]byte(
+				`{"error":"Invalid request","reason":"key hash does not match credential for client"}`,
+			),
+		)
 		return
 	}
 
@@ -248,10 +302,22 @@ func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
+// ClientAvailableRequest provides the client ID to check for availability
 type ClientAvailableRequest struct {
 	Id string `json:"id"`
 }
 
+// handleClientAvailable godoc
+//
+//	@Summary		ClientAvailable
+//	@Description	Check if a client profile is available
+//	@Accept			json
+//	@Param			ClientAvailableRequest	body		ClientAvailableRequest	true	"Client Available Request"
+//	@Success		200						{string}	string					"OK"
+//	@Failure		400						{object}	string					"Bad Request"
+//	@Failure		405						{object}	string					"Method Not Allowed"
+//	@Failure		500						{object}	string					"Server Error"
+//	@Router			/api/client/available [post]
 func (a *Api) handleClientAvailable(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)

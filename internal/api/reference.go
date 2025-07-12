@@ -20,16 +20,28 @@ import (
 	"net/http"
 )
 
+// RefDataResponse provides the list of prices and the VPN regions available
 type RefDataResponse struct {
 	Prices  []RefDataResponsePrice `json:"prices"`
 	Regions []string               `json:"regions"`
 }
 
+// RefDataResponsePrice provides the price for a given duration
 type RefDataResponsePrice struct {
 	Duration uint64 `json:"duration"`
 	Price    uint64 `json:"price"`
 }
 
+// handleRefData godoc
+//
+//	@Summary		RefData
+//	@Description	Fetch prices and regions for signup or renewal
+//	@Produce		json
+//	@Accept			json
+//	@Success		200	{object}	RefDataResponse	"Prices and regions"
+//	@Failure		405	{object}	string			"Method Not Allowed"
+//	@Failure		500	{object}	string			"Server Error"
+//	@Router			/api/refdata [get]
 func (a *Api) handleRefData(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
