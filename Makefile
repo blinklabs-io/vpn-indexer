@@ -32,6 +32,10 @@ format: mod-tidy
 golines:
 	golines -w --ignore-generated --chain-split-dots --max-len=80 --reformat-tags .
 
+swagger:
+	swag f -g api.go -d internal/api
+	swag i -g api.go -d internal/api
+
 test: mod-tidy
 	go test -v -race ./...
 
