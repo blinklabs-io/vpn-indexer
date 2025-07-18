@@ -116,11 +116,11 @@ var globalConfig = &Config{
 	},
 	Indexer: IndexerConfig{
 		Network: "preprod",
-		// NOTE: these values correspond to the block before the script used below appears on-chain
-		IntersectSlot:  95_150_168,
-		IntersectHash:  "bbb8595e68893da96b2faa8a9b5dd7cfbcc1b703a4aba24bec7e747a67cfb0fe",
-		ScriptAddress:  "addr_test1zq5qjs3e472czsg6aj672z8zmd5dxynuggqguyckuz8uz62jduk3c6ecrpkrk8qqlr4ep37cx03ytlcn70n93zyemj6sr5gmrj",
-		ReferenceToken: "4481fb794c89d84faec248eeb50543f2b321946e7a5ecaff0ded4455.61646d696e",
+		// NOTE: these values correspond to the block before the reference token and/or script used below appear on-chain
+		IntersectSlot:  97_153_054,
+		IntersectHash:  "833506cade5ebd129065f76bc13260147e185797e0f265658499b6d57fe5b584",
+		ScriptAddress:  "addr_test1zrmx2wvrdqurqgp2wg4v8v9g27zugxezyt75as9zkycyda2jduk3c6ecrpkrk8qqlr4ep37cx03ytlcn70n93zyemj6s4mgt63",
+		ReferenceToken: "85b95fee1b7cf6f2a7dca818e77b901ff3c1b6aae4473219cf56902b.61646d696e",
 	},
 	Database: DatabaseConfig{
 		Directory: "./.vpn-indexer",
