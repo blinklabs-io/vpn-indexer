@@ -39,6 +39,22 @@ definitions:
       price:
         type: integer
     type: object
+  api.TxSignupRequest:
+    properties:
+      clientAddress:
+        type: string
+      duration:
+        type: integer
+      price:
+        type: integer
+      region:
+        type: string
+    type: object
+  api.TxSignupResponse:
+    properties:
+      txCbor:
+        type: string
+    type: object
 info:
   contact:
     email: support@blinklabs.io
@@ -166,4 +182,36 @@ paths:
           schema:
             type: string
       summary: RefData
+  /api/tx/signup:
+    post:
+      consumes:
+      - application/json
+      description: Build a transaction for a VPN signup
+      parameters:
+      - description: Signup Request
+        in: body
+        name: TxSignupRequest
+        required: true
+        schema:
+          $ref: '#/definitions/api.TxSignupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Built transaction
+          schema:
+            $ref: '#/definitions/api.TxSignupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "405":
+          description: Method Not Allowed
+          schema:
+            type: string
+        "500":
+          description: Server Error
+          schema:
+            type: string
+      summary: TxSignup
 swagger: "2.0"

@@ -1,0 +1,147 @@
+// Copyright 2025 Blink Labs Software
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package txbuilder
+
+import (
+	"context"
+	"encoding/binary"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"slices"
+	"time"
+
+	"github.com/Salvionied/apollo/serialization/Amount"
+	"github.com/Salvionied/apollo/serialization/TransactionInput"
+	"github.com/Salvionied/apollo/serialization/UTxO"
+	"github.com/Salvionied/apollo/serialization/Value"
+	"github.com/Salvionied/apollo/txBuilding/Backend/OgmiosChainContext"
+	"github.com/SundaeSwap-finance/kugo"
+	"github.com/SundaeSwap-finance/ogmigo/v6"
+	lcommon "github.com/blinklabs-io/gouroboros/ledger/common"
+	"github.com/blinklabs-io/gouroboros/ledger/shelley"
+	"github.com/blinklabs-io/vpn-indexer/internal/config"
+	"github.com/blinklabs-io/vpn-indexer/internal/database"
+)
+
+const (
+	defaultKupoTimeout = 1 * time.Second
+)
+
+var systemStart *time.Time
+
+func apolloBackend() (*OgmiosChainContext.OgmiosChainContext, error) {
+	cfg := config.GetConfig()
+	ogmiosClient := ogmiosClient()
+	kupoClient := kugo.New(
+		kugo.WithEndpoint(cfg.TxBuilder.KupoUrl),
+		kugo.WithTimeout(defaultKupoTimeout),
+	)
+	occ := OgmiosChainContext.NewOgmiosChainContext(*ogmiosClient, *kupoClient)
+	return &occ, nil
+}
+
+func ogmiosClient() *ogmigo.Client {
+	cfg := config.GetConfig()
+	ogmiosClient := ogmigo.New(
+		ogmigo.WithEndpoint(cfg.TxBuilder.OgmiosUrl),
+	)
+	return ogmiosClient
+}
+
+func ogmiosSystemStart(ogmios *ogmigo.Client) (time.Time, error) {
+	// Return cached system start
+	if systemStart != nil {
+		return *systemStart, nil
+	}
+	// Get system start from Shelley genesis config
+	genesisConfigRaw, err := ogmios.GenesisConfig(context.Background(), "shelley")
+	if err != nil {
+		return *systemStart, err
+	}
+	var tmpGenesisConfig struct {
+		StartTime time.Time `json:"startTime"`
+	}
+	if err := json.Unmarshal(genesisConfigRaw, &tmpGenesisConfig); err != nil {
+		return *systemStart, err
+	}
+	systemStart = &(tmpGenesisConfig.StartTime)
+	return *systemStart, nil
+}
+
+func inputRefFromString(ref string) (lcommon.TransactionInput, error) {
+	var refInput shelley.ShelleyTransactionInput
+	var tmpTxId []byte
+	_, err := fmt.Sscanf(
+		ref,
+		"%x#%d",
+		&tmpTxId,
+		&refInput.OutputIndex,
+	)
+	refInput.TxId = lcommon.Blake2b256(tmpTxId)
+	if err != nil {
+		return nil, fmt.Errorf("parse script ref input: %w", err)
+	}
+	return refInput, nil
+}
+
+func chooseInputUtxos(availableUtxos []UTxO.UTxO, neededAmount int) ([]UTxO.UTxO, error) {
+	var ret []UTxO.UTxO
+	// The below code is adapted from Apollo's own UTxO selection code
+	selectedAmount := Value.Value{}
+	requestedAmount := Value.Value{Am: Amount.Amount{}, Coin: int64(neededAmount), HasAssets: false}
+	for !selectedAmount.Greater(
+		requestedAmount.Add(
+			Value.Value{Am: Amount.Amount{}, Coin: 1_000_000, HasAssets: false},
+		),
+	) {
+		if len(availableUtxos) == 0 {
+			return nil, errors.New("not enough funds")
+		}
+		utxo := availableUtxos[0]
+		ret = append(ret, utxo)
+		selectedAmount = selectedAmount.Add(utxo.Output.GetValue())
+		availableUtxos = availableUtxos[1:]
+	}
+	return ret, nil
+}
+
+func clientIdFromInput(input TransactionInput.TransactionInput) []byte {
+	indexData := make([]byte, 2)
+	binary.LittleEndian.PutUint16(indexData, uint16(input.Index))
+	// Iterate from the end and remove any zero bytes
+	for i := len(indexData) - 1; i >= 0; i-- {
+		if indexData[i] == 0 {
+			indexData = slices.Delete(indexData, i, i+1)
+		}
+	}
+	hashData := input.TransactionId
+	hashData = slices.Concat(hashData, indexData)
+	hash := lcommon.Blake2b256Hash(hashData)
+	return hash.Bytes()
+}
+
+func determinePlanSelection(refData database.Reference, price int, duration int) (int, error) {
+	for idx, tmpPrice := range refData.Prices {
+		if tmpPrice.Price != price {
+			continue
+		}
+		if tmpPrice.Duration != duration {
+			continue
+		}
+		return idx, nil
+	}
+	return 0, errors.New("selection not found")
+}
