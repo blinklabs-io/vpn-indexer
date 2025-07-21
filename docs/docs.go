@@ -281,7 +281,18 @@ const docTemplate = `{
             }
         },
         "api.ClientProfileRequest": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "signature": {
+                    "type": "string"
+                }
+            }
         },
         "api.RefDataResponse": {
             "type": "object",
