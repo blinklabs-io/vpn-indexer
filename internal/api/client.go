@@ -34,7 +34,6 @@ import (
 // ClientListRequest provides the payment credential hash to search
 type ClientListRequest struct {
 	PaymentKeyHash string `json:"paymentKeyHash"`
-	//StakeKeyHash   string `json:"stakeKeyHash"`
 }
 
 // Client provides the unique identifier, expiration time, and VPN region for
@@ -108,17 +107,17 @@ func (a *Api) handleClientList(w http.ResponseWriter, r *http.Request) {
 
 // ClientProfileRequest provides the client ID and COSE payload for verification
 type ClientProfileRequest struct {
-	Id        []byte
-	Signature cose.UntaggedSign1Message
-	Key       cose.Key
+	Id        string `json:"id"`
+	Signature string `json:"signature"`
+	Key       string `json:"key"`
+	// Inner representations
+	innerId        []byte
+	innerSignature cose.UntaggedSign1Message
+	innerKey       cose.Key
 }
 
 func (r *ClientProfileRequest) UnmarshalJSON(data []byte) error {
-	type tmpClientProfileRequest struct {
-		Id        string `json:"id"`
-		Signature string `json:"signature"`
-		Key       string `json:"key"`
-	}
+	type tmpClientProfileRequest ClientProfileRequest
 	var tmpData tmpClientProfileRequest
 	if err := json.Unmarshal(data, &tmpData); err != nil {
 		return err
@@ -128,13 +127,13 @@ func (r *ClientProfileRequest) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return errors.New("decode client ID hex")
 	}
-	r.Id = tmpId
+	r.innerId = tmpId
 	// Signature
 	sigBytes, err := hex.DecodeString(tmpData.Signature)
 	if err != nil {
 		return errors.New("decode signature hex")
 	}
-	if err := r.Signature.UnmarshalCBOR(sigBytes); err != nil {
+	if err := r.innerSignature.UnmarshalCBOR(sigBytes); err != nil {
 		return fmt.Errorf("decode signature: %w", err)
 	}
 	// Key
@@ -142,7 +141,7 @@ func (r *ClientProfileRequest) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return errors.New("decode key hex")
 	}
-	if err := r.Key.UnmarshalCBOR(keyBytes); err != nil {
+	if err := r.innerKey.UnmarshalCBOR(keyBytes); err != nil {
 		return fmt.Errorf("decode key: %w", err)
 	}
 	return nil
@@ -175,7 +174,7 @@ func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Lookup client in database
-	tmpClient, err := a.db.ClientByAssetName(req.Id)
+	tmpClient, err := a.db.ClientByAssetName(req.innerId)
 	if err != nil {
 		slog.Error(
 			"failed to lookup client in database",
@@ -188,7 +187,7 @@ func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check that profile is available
-	client := client.New(a.cfg, a.ca, req.Id)
+	client := client.New(a.cfg, a.ca, req.innerId)
 	if ok, err := client.ProfileExists(); err != nil {
 		slog.Error(
 			"failed to check if profile exists",
@@ -206,9 +205,9 @@ func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 
 	// Verify challenge string meets requirements
 	challengeClientId := string(
-		req.Signature.Payload[0:len(hex.EncodeToString(req.Id))],
+		req.innerSignature.Payload[0:len(req.Id)],
 	)
-	if challengeClientId != hex.EncodeToString(req.Id) {
+	if challengeClientId != req.Id {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write(
 			[]byte(
@@ -217,7 +216,7 @@ func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
-	challengeTimestamp := string(req.Signature.Payload[len(challengeClientId):])
+	challengeTimestamp := string(req.innerSignature.Payload[len(challengeClientId):])
 	tmpTimestamp, err := strconv.ParseInt(challengeTimestamp, 10, 64)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -240,7 +239,7 @@ func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Verify challenge signature
-	vkey, err := req.Key.PublicKey()
+	vkey, err := req.innerKey.PublicKey()
 	if err != nil {
 		slog.Error(
 			"failed to get public key",
@@ -262,7 +261,7 @@ func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`{"error":"Internal server error"}`))
 		return
 	}
-	if err := req.Signature.Verify(nil, verifier); err != nil {
+	if err := req.innerSignature.Verify(nil, verifier); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write(
 			[]byte(

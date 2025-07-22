@@ -20,6 +20,13 @@ definitions:
         type: string
     type: object
   api.ClientProfileRequest:
+    properties:
+      id:
+        type: string
+      key:
+        type: string
+      signature:
+        type: string
     type: object
   api.RefDataResponse:
     properties:
