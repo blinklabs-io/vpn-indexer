@@ -122,6 +122,10 @@ func (r *ClientProfileRequest) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &tmpData); err != nil {
 		return err
 	}
+	// Copy original request data
+	r.Id = tmpData.Id
+	r.Signature = tmpData.Signature
+	r.Key = tmpData.Key
 	// Client ID
 	tmpId, err := hex.DecodeString(tmpData.Id)
 	if err != nil {
