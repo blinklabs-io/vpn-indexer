@@ -39,16 +39,16 @@ type Api struct {
 
 var api *Api
 
-//	@title			vpn-indexer
-//	@version		v0
-//	@description	NABU VPN indexer API
-//	@BasePath		/
-//	@contact.name	Blink Labs Software
-//	@contact.url	https://blinklabs.io
-//	@contact.email	support@blinklabs.io
+// @title			vpn-indexer
+// @version		v0
+// @description	NABU VPN indexer API
+// @BasePath		/
+// @contact.name	Blink Labs Software
+// @contact.url	https://blinklabs.io
+// @contact.email	support@blinklabs.io
 //
-//	@license.name	Apache 2.0
-//	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
+// @license.name	Apache 2.0
+// @license.url	http://www.apache.org/licenses/LICENSE-2.0.html
 func Start(cfg *config.Config, db *database.Database, ca *ca.Ca) error {
 	logger := slog.Default()
 	logger.Info("initializing API server")
@@ -108,6 +108,7 @@ func (a *Api) logMiddleware(
 			ResponseWriter: w,
 			statusCode:     http.StatusOK,
 		}
+		startTime := time.Now()
 		next.ServeHTTP(rec, r)
 
 		// Skip logging on a healthcheck request if healthcheck logging is disabled
@@ -122,6 +123,7 @@ func (a *Api) logMiddleware(
 			"method", r.Method,
 			"path", r.URL.Path,
 			"remote_addr", r.RemoteAddr,
+			"duration", time.Since(startTime).String(),
 		)
 	})
 }
