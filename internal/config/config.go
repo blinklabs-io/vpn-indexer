@@ -38,7 +38,7 @@ type Config struct {
 }
 
 type LoggingConfig struct {
-	Debug bool `yaml:"debug"    envconfig:"LOGGING_DEBUG"`
+	Debug bool `yaml:"debug" envconfig:"LOGGING_DEBUG"`
 }
 
 type DebugConfig struct {
@@ -52,15 +52,15 @@ type MetricsConfig struct {
 }
 
 type IndexerConfig struct {
-	Network            string `yaml:"network"       envconfig:"INDEXER_NETWORK"`
-	NetworkMagic       uint32 `yaml:"networkMagic"  envconfig:"INDEXER_NETWORK_MAGIC"`
-	Address            string `yaml:"address"       envconfig:"INDEXER_TCP_ADDRESS"`
-	SocketPath         string `yaml:"socketPath"    envconfig:"INDEXER_SOCKET_PATH"`
-	IntersectHash      string `yaml:"interceptHash" envconfig:"INDEXER_INTERSECT_HASH"`
-	IntersectSlot      uint64 `yaml:"interceptSlot" envconfig:"INDEXER_INTERSECT_SLOT"`
-	ScriptAddress      string `yaml:"scriptAddress" envconfig:"INDEXER_SCRIPT_ADDRESS"`
+	Network            string `yaml:"network"            envconfig:"INDEXER_NETWORK"`
+	NetworkMagic       uint32 `yaml:"networkMagic"       envconfig:"INDEXER_NETWORK_MAGIC"`
+	Address            string `yaml:"address"            envconfig:"INDEXER_TCP_ADDRESS"`
+	SocketPath         string `yaml:"socketPath"         envconfig:"INDEXER_SOCKET_PATH"`
+	IntersectHash      string `yaml:"interceptHash"      envconfig:"INDEXER_INTERSECT_HASH"`
+	IntersectSlot      uint64 `yaml:"interceptSlot"      envconfig:"INDEXER_INTERSECT_SLOT"`
+	ScriptAddress      string `yaml:"scriptAddress"      envconfig:"INDEXER_SCRIPT_ADDRESS"`
 	DelayConfirmations uint   `yaml:"delayConfirmations" envconfig:"INDEXER_DELAY_CONFIRMATIONS"`
-	ReferenceToken     string `yaml:"referenceToken" envconfig:"INDEXER_REFERENCE_TOKEN"`
+	ReferenceToken     string `yaml:"referenceToken"     envconfig:"INDEXER_REFERENCE_TOKEN"`
 }
 
 type DatabaseConfig struct {
@@ -68,18 +68,18 @@ type DatabaseConfig struct {
 }
 
 type CaConfig struct {
-	Cert           string `yaml:"cert" envconfig:"CA_CERT"`
-	CertFile       string `yaml:"certFile" envconfig:"CA_CERT_FILE"`
-	Key            string `yaml:"key" envconfig:"CA_KEY"`
-	KeyFile        string `yaml:"keyFile" envconfig:"CA_KEY_FILE"`
-	Passphrase     string `yaml:"passphrase" envconfig:"CA_PASSPHRASE"`
+	Cert           string `yaml:"cert"           envconfig:"CA_CERT"`
+	CertFile       string `yaml:"certFile"       envconfig:"CA_CERT_FILE"`
+	Key            string `yaml:"key"            envconfig:"CA_KEY"`
+	KeyFile        string `yaml:"keyFile"        envconfig:"CA_KEY_FILE"`
+	Passphrase     string `yaml:"passphrase"     envconfig:"CA_PASSPHRASE"`
 	PassphraseFile string `yaml:"passphraseFile" envconfig:"CA_PASSPHRASE_FILE"`
 }
 
 type S3Config struct {
-	ClientBucket    string `yaml:"clientBucket" envconfig:"S3_CLIENT_BUCKET"`
+	ClientBucket    string `yaml:"clientBucket"    envconfig:"S3_CLIENT_BUCKET"`
 	ClientKeyPrefix string `yaml:"clientKeyPrefix" envconfig:"S3_CLIENT_KEY_PREFIX"`
-	Endpoint        string `yaml:"endpoint" envconfig:"S3_ENDPOINT"`
+	Endpoint        string `yaml:"endpoint"        envconfig:"S3_ENDPOINT"`
 }
 
 type VpnConfig struct {
@@ -88,25 +88,25 @@ type VpnConfig struct {
 }
 
 type CrlConfig struct {
-	UpdateInterval     time.Duration `yaml:"updateInterval" envconfig:"CRL_UPDATE_INTERVAL"`
-	RevokeSerials      []string      `yaml:"revokeSerials" envconfig:"CRL_REVOKE_SERIALS"`
-	RevokeTime         time.Time     `yaml:"revokeTime" envconfig:"CRL_REVOKE_TIME"`
+	UpdateInterval     time.Duration `yaml:"updateInterval"     envconfig:"CRL_UPDATE_INTERVAL"`
+	RevokeSerials      []string      `yaml:"revokeSerials"      envconfig:"CRL_REVOKE_SERIALS"`
+	RevokeTime         time.Time     `yaml:"revokeTime"         envconfig:"CRL_REVOKE_TIME"`
 	ConfigMapNamespace string        `yaml:"configMapNamespace" envconfig:"CRL_CONFIGMAP_NAMESPACE"`
-	ConfigMapName      string        `yaml:"configMapName" envconfig:"CRL_CONFIGMAP_NAME"`
-	ConfigMapKey       string        `yaml:"configMapKey" envconfig:"CRL_CONFIGMAP_KEY"`
+	ConfigMapName      string        `yaml:"configMapName"      envconfig:"CRL_CONFIGMAP_NAME"`
+	ConfigMapKey       string        `yaml:"configMapKey"       envconfig:"CRL_CONFIGMAP_KEY"`
 }
 
 type ApiConfig struct {
-	ListenAddress  string `yaml:"address" envconfig:"API_LISTEN_ADDRESS"`
-	ListenPort     uint   `yaml:"port"    envconfig:"API_LISTEN_PORT"`
+	ListenAddress  string `yaml:"address"        envconfig:"API_LISTEN_ADDRESS"`
+	ListenPort     uint   `yaml:"port"           envconfig:"API_LISTEN_PORT"`
 	LogHealthcheck bool   `yaml:"logHealthcheck" envconfig:"API_LOG_HEALTHCHECK"`
 }
 
 type TxBuilderConfig struct {
-	KupoUrl         string `yaml:"kupoUrl" envconfig:"TXBUILDER_KUPO_URL"`
-	OgmiosUrl       string `yaml:"ogmiosUrl" envconfig:"TXBUILDER_OGMIOS_URL"`
+	KupoUrl         string `yaml:"kupoUrl"         envconfig:"TXBUILDER_KUPO_URL"`
+	OgmiosUrl       string `yaml:"ogmiosUrl"       envconfig:"TXBUILDER_OGMIOS_URL"`
 	ProviderAddress string `yaml:"providerAddress" envconfig:"TXBUILDER_PROVIDER_ADDRESS"`
-	ScriptRefInput  string `yaml:"scriptRefInput" envconfig:"TXBUILDER_SCRIPT_REF_INPUT"`
+	ScriptRefInput  string `yaml:"scriptRefInput"  envconfig:"TXBUILDER_SCRIPT_REF_INPUT"`
 }
 
 // Singleton config instance with default values

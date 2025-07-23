@@ -50,7 +50,10 @@ func (d *Database) AddCursorPoint(point ocommon.Point) error {
 			Where("id < (SELECT max(id) FROM cursor) - ?", maxCursorEntries).
 			Delete(&Cursor{})
 		if result.Error != nil {
-			return fmt.Errorf("failure removing cursor entries: %s", result.Error)
+			return fmt.Errorf(
+				"failure removing cursor entries: %s",
+				result.Error,
+			)
 		}
 	}
 	return nil

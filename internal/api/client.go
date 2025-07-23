@@ -220,7 +220,9 @@ func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
-	challengeTimestamp := string(req.innerSignature.Payload[len(challengeClientId):])
+	challengeTimestamp := string(
+		req.innerSignature.Payload[len(challengeClientId):],
+	)
 	tmpTimestamp, err := strconv.ParseInt(challengeTimestamp, 10, 64)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

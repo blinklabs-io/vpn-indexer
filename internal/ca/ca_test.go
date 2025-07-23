@@ -140,7 +140,11 @@ func TestCaCreateClient(t *testing.T) {
 		t.Fatalf("unexpected error generating client cert: %s", err)
 	}
 	if client.CaCert != testCaCert {
-		t.Fatalf("did not get expected CA cert\n     got: %s\n  wanted: %s", client.CaCert, testCaCert)
+		t.Fatalf(
+			"did not get expected CA cert\n     got: %s\n  wanted: %s",
+			client.CaCert,
+			testCaCert,
+		)
 	}
 	pemBlock, _ := pem.Decode([]byte(client.Cert))
 	if pemBlock == nil {
@@ -152,7 +156,11 @@ func TestCaCreateClient(t *testing.T) {
 	}
 	serialHex := hex.EncodeToString(tmpCert.SerialNumber.Bytes())
 	if serialHex != expectedCertSerial {
-		t.Fatalf("did not get expected cert serial: got %s, wanted %s", serialHex, expectedCertSerial)
+		t.Fatalf(
+			"did not get expected cert serial: got %s, wanted %s",
+			serialHex,
+			expectedCertSerial,
+		)
 	}
 }
 
@@ -175,7 +183,11 @@ func TestCaCreateClientEncKey(t *testing.T) {
 		t.Fatalf("unexpected error generating client cert: %s", err)
 	}
 	if client.CaCert != testCaCert {
-		t.Fatalf("did not get expected CA cert\n     got: %s\n  wanted: %s", client.CaCert, testCaCert)
+		t.Fatalf(
+			"did not get expected CA cert\n     got: %s\n  wanted: %s",
+			client.CaCert,
+			testCaCert,
+		)
 	}
 	pemBlock, _ := pem.Decode([]byte(client.Cert))
 	if pemBlock == nil {
@@ -187,7 +199,11 @@ func TestCaCreateClientEncKey(t *testing.T) {
 	}
 	serialHex := hex.EncodeToString(tmpCert.SerialNumber.Bytes())
 	if serialHex != expectedCertSerial {
-		t.Fatalf("did not get expected cert serial: got %s, wanted %s", serialHex, expectedCertSerial)
+		t.Fatalf(
+			"did not get expected cert serial: got %s, wanted %s",
+			serialHex,
+			expectedCertSerial,
+		)
 	}
 }
 
@@ -229,12 +245,20 @@ oc9CHTH5lsWcmzc=
 	if err != nil {
 		t.Fatalf("unexpected error creating CA: %s", err)
 	}
-	crlBytes, err := c.GenerateCRL(testRevokedCerts, testIssuedTime, testExpireTime)
+	crlBytes, err := c.GenerateCRL(
+		testRevokedCerts,
+		testIssuedTime,
+		testExpireTime,
+	)
 	if err != nil {
 		t.Fatalf("unexpected error generating CRL: %s", err)
 	}
 	tmpCrl := strings.TrimSpace(string(crlBytes))
 	if tmpCrl != expectedCrl {
-		t.Fatalf("did not get expected CRL content\n     got:\n%s\n  wanted:\n%s", tmpCrl, expectedCrl)
+		t.Fatalf(
+			"did not get expected CRL content\n     got:\n%s\n  wanted:\n%s",
+			tmpCrl,
+			expectedCrl,
+		)
 	}
 }
