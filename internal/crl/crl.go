@@ -41,7 +41,12 @@ type Crl struct {
 	timer  *time.Timer
 }
 
-func New(cfg *config.Config, logger *slog.Logger, db *database.Database, ca *ca.Ca) (*Crl, error) {
+func New(
+	cfg *config.Config,
+	logger *slog.Logger,
+	db *database.Database,
+	ca *ca.Ca,
+) (*Crl, error) {
 	crl := &Crl{
 		ca:     ca,
 		config: cfg,
@@ -114,7 +119,11 @@ func (c *Crl) updateConfigMap() error {
 			},
 		)
 	}
-	crlData, err := c.ca.GenerateCRL(revokedCerts, time.Now(), time.Now().AddDate(1, 0, 0))
+	crlData, err := c.ca.GenerateCRL(
+		revokedCerts,
+		time.Now(),
+		time.Now().AddDate(1, 0, 0),
+	)
 	if err != nil {
 		return err
 	}
@@ -132,7 +141,9 @@ func (c *Crl) updateConfigMap() error {
 	}
 	// Check if ConfigMap already exists
 	configMapExists := true
-	_, err = client.CoreV1().ConfigMaps(c.config.Crl.ConfigMapNamespace).Get(context.TODO(), c.config.Crl.ConfigMapName, metav1.GetOptions{})
+	_, err = client.CoreV1().
+		ConfigMaps(c.config.Crl.ConfigMapNamespace).
+		Get(context.TODO(), c.config.Crl.ConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return fmt.Errorf("get ConfigMap: %w", err)
@@ -141,7 +152,9 @@ func (c *Crl) updateConfigMap() error {
 	}
 	// Create/update ConfigMap
 	if configMapExists {
-		_, err = client.CoreV1().ConfigMaps(c.config.Crl.ConfigMapNamespace).Update(context.TODO(), configMap, metav1.UpdateOptions{})
+		_, err = client.CoreV1().
+			ConfigMaps(c.config.Crl.ConfigMapNamespace).
+			Update(context.TODO(), configMap, metav1.UpdateOptions{})
 		if err != nil {
 			return fmt.Errorf("update ConfigMap: %w", err)
 		}

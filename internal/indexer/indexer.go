@@ -71,7 +71,12 @@ type Indexer struct {
 // Singleton indexer instance
 var globalIndexer = &Indexer{}
 
-func (i *Indexer) Start(cfg *config.Config, logger *slog.Logger, db *database.Database, ca *ca.Ca) error {
+func (i *Indexer) Start(
+	cfg *config.Config,
+	logger *slog.Logger,
+	db *database.Database,
+	ca *ca.Ca,
+) error {
 	i.cfg = cfg
 	i.db = db
 	i.ca = ca

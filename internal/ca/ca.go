@@ -142,7 +142,13 @@ func (c *Ca) GenerateClientCert(clientName string) (*ClientCert, error) {
 		return nil, err
 	}
 	// Create certificate
-	certBytes, err := x509.CreateCertificate(rand.Reader, cert, c.caCert, &privKey.PublicKey, c.caKey)
+	certBytes, err := x509.CreateCertificate(
+		rand.Reader,
+		cert,
+		c.caCert,
+		&privKey.PublicKey,
+		c.caKey,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +184,11 @@ func (c *Ca) GenerateClientCert(clientName string) (*ClientCert, error) {
 	return ret, nil
 }
 
-func (c *Ca) GenerateCRL(revokedCerts []pkix.RevokedCertificate, issuedTime time.Time, expireTime time.Time) ([]byte, error) {
+func (c *Ca) GenerateCRL(
+	revokedCerts []pkix.RevokedCertificate,
+	issuedTime time.Time,
+	expireTime time.Time,
+) ([]byte, error) {
 	crlBytes, err := x509.CreateRevocationList(
 		rand.Reader,
 		&x509.RevocationList{

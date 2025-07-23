@@ -67,7 +67,10 @@ func ogmiosSystemStart(ogmios *ogmigo.Client) (time.Time, error) {
 		return *systemStart, nil
 	}
 	// Get system start from Shelley genesis config
-	genesisConfigRaw, err := ogmios.GenesisConfig(context.Background(), "shelley")
+	genesisConfigRaw, err := ogmios.GenesisConfig(
+		context.Background(),
+		"shelley",
+	)
 	if err != nil {
 		return *systemStart, err
 	}
@@ -97,11 +100,18 @@ func inputRefFromString(ref string) (lcommon.TransactionInput, error) {
 	return refInput, nil
 }
 
-func chooseInputUtxos(availableUtxos []UTxO.UTxO, neededAmount int) ([]UTxO.UTxO, error) {
+func chooseInputUtxos(
+	availableUtxos []UTxO.UTxO,
+	neededAmount int,
+) ([]UTxO.UTxO, error) {
 	var ret []UTxO.UTxO
 	// The below code is adapted from Apollo's own UTxO selection code
 	selectedAmount := Value.Value{}
-	requestedAmount := Value.Value{Am: Amount.Amount{}, Coin: int64(neededAmount), HasAssets: false}
+	requestedAmount := Value.Value{
+		Am:        Amount.Amount{},
+		Coin:      int64(neededAmount),
+		HasAssets: false,
+	}
 	for !selectedAmount.Greater(
 		requestedAmount.Add(
 			Value.Value{Am: Amount.Amount{}, Coin: 1_000_000, HasAssets: false},
@@ -133,7 +143,11 @@ func clientIdFromInput(input TransactionInput.TransactionInput) []byte {
 	return hash.Bytes()
 }
 
-func determinePlanSelection(refData database.Reference, price int, duration int) (int, error) {
+func determinePlanSelection(
+	refData database.Reference,
+	price int,
+	duration int,
+) (int, error) {
 	for idx, tmpPrice := range refData.Prices {
 		if tmpPrice.Price != price {
 			continue

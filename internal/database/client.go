@@ -48,16 +48,22 @@ func (d *Database) AddClient(
 
 func (d *Database) ExpiredClients() ([]Client, error) {
 	var ret []Client
-	result := d.db.Where("expiration < datetime('now')").Order("expiration").Find(&ret)
+	result := d.db.Where("expiration < datetime('now')").
+		Order("expiration").
+		Find(&ret)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 	return ret, nil
 }
 
-func (d *Database) ClientsByCredential(paymentKeyHash []byte) ([]Client, error) {
+func (d *Database) ClientsByCredential(
+	paymentKeyHash []byte,
+) ([]Client, error) {
 	var ret []Client
-	result := d.db.Where("credential = ?", paymentKeyHash).Order("id").Find(&ret)
+	result := d.db.Where("credential = ?", paymentKeyHash).
+		Order("id").
+		Find(&ret)
 	if result.Error != nil {
 		return nil, result.Error
 	}

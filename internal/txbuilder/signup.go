@@ -53,7 +53,9 @@ func BuildSignupTx(
 		return nil, fmt.Errorf("script address: %w", err)
 	}
 	scriptHash := scriptAddress.PaymentPart
-	providerAddress, err := serAddress.DecodeAddress(cfg.TxBuilder.ProviderAddress)
+	providerAddress, err := serAddress.DecodeAddress(
+		cfg.TxBuilder.ProviderAddress,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("provider address: %w", err)
 	}
@@ -70,7 +72,11 @@ func BuildSignupTx(
 	// Get available UTxOs from user's wallet
 	availableUtxos, err := cc.Utxos(clientAddr)
 	if err != nil {
-		return nil, fmt.Errorf("lookup UTxOs for address: %s: %w", clientAddr.String(), err)
+		return nil, fmt.Errorf(
+			"lookup UTxOs for address: %s: %w",
+			clientAddr.String(),
+			err,
+		)
 	}
 	// Choose input UTxOs from user's wallet
 	inputUtxos, err := chooseInputUtxos(availableUtxos, price+5_000_000)
