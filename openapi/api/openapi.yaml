@@ -1,0 +1,271 @@
+openapi: 3.0.1
+info:
+  contact:
+    email: support@blinklabs.io
+    name: Blink Labs Software
+    url: https://blinklabs.io
+  description: NABU VPN indexer API
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: vpn-indexer
+  version: v0
+servers:
+- url: /
+paths:
+  /api/client/available:
+    post:
+      description: Check if a client profile is available
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/api.ClientAvailableRequest"
+        description: Client Available Request
+        required: true
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                type: string
+          description: OK
+        "400":
+          content:
+            '*/*':
+              schema:
+                type: string
+          description: Bad Request
+        "405":
+          content:
+            '*/*':
+              schema:
+                type: string
+          description: Method Not Allowed
+        "500":
+          content:
+            '*/*':
+              schema:
+                type: string
+          description: Server Error
+      summary: ClientAvailable
+      x-codegen-request-body-name: ClientAvailableRequest
+  /api/client/list:
+    post:
+      description: Search for clients matching a given manager public key hash
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/api.ClientListRequest"
+        description: List Request
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/api.Client"
+                type: array
+          description: List of matching clients
+        "400":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Bad Request
+        "405":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Method Not Allowed
+        "500":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Server Error
+      summary: ClientList
+      x-codegen-request-body-name: ClientListRequest
+  /api/client/profile:
+    post:
+      description: Fetch a client VPN profile given a COSE payload via signed S3 link
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/api.ClientProfileRequest"
+        description: Profile Request
+        required: true
+      responses:
+        "302":
+          content:
+            '*/*':
+              schema:
+                type: string
+          description: Found
+        "400":
+          content:
+            '*/*':
+              schema:
+                type: string
+          description: Bad Request
+        "405":
+          content:
+            '*/*':
+              schema:
+                type: string
+          description: Method Not Allowed
+        "500":
+          content:
+            '*/*':
+              schema:
+                type: string
+          description: Server Error
+      summary: ClientProfile
+      x-codegen-request-body-name: ClientProfileRequest
+  /api/refdata:
+    get:
+      description: Fetch prices and regions for signup or renewal
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/api.RefDataResponse"
+          description: Prices and regions
+        "405":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Method Not Allowed
+        "500":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Server Error
+      summary: RefData
+  /api/tx/signup:
+    post:
+      description: Build a transaction for a VPN signup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/api.TxSignupRequest"
+        description: Signup Request
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/api.TxSignupResponse"
+          description: Built transaction
+        "400":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Bad Request
+        "405":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Method Not Allowed
+        "500":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Server Error
+      summary: TxSignup
+      x-codegen-request-body-name: TxSignupRequest
+components:
+  schemas:
+    api.Client:
+      example:
+        expiration: expiration
+        id: id
+        region: region
+      properties:
+        expiration:
+          type: string
+        id:
+          type: string
+        region:
+          type: string
+      type: object
+    api.ClientAvailableRequest:
+      properties:
+        id:
+          type: string
+      type: object
+    api.ClientListRequest:
+      properties:
+        paymentKeyHash:
+          type: string
+      type: object
+    api.ClientProfileRequest:
+      properties:
+        id:
+          type: string
+        key:
+          type: string
+        signature:
+          type: string
+      type: object
+    api.RefDataResponse:
+      example:
+        regions:
+        - regions
+        - regions
+        prices:
+        - duration: 0
+          price: 6
+        - duration: 0
+          price: 6
+      properties:
+        prices:
+          items:
+            $ref: "#/components/schemas/api.RefDataResponsePrice"
+          type: array
+        regions:
+          items:
+            type: string
+          type: array
+      type: object
+    api.RefDataResponsePrice:
+      example:
+        duration: 0
+        price: 6
+      properties:
+        duration:
+          type: integer
+        price:
+          type: integer
+      type: object
+    api.TxSignupRequest:
+      properties:
+        clientAddress:
+          type: string
+        duration:
+          type: integer
+        price:
+          type: integer
+        region:
+          type: string
+      type: object
+    api.TxSignupResponse:
+      example:
+        txCbor: txCbor
+      properties:
+        txCbor:
+          type: string
+      type: object
+x-original-swagger-version: "2.0"
