@@ -191,9 +191,13 @@ jobs:
             # semver
             type=semver,pattern={{version}}
       - name: manifest-create
+        shell: bash
         run: |
           for t in `echo '${{ steps.meta.outputs.tags }}'`; do
-            docker manifest create ${t} --amend ${t}-amd64 --amend ${t}-arm64
+            # Extract the underlying manifests from each manifests list and create a new single manifest list
+            docker manifest create ${t} \
+              $(docker manifest inspect ${t}-amd64 | jq -r '.manifests[] | .digest' | sed -e "s:^:${t%:*}@") \
+              $(docker manifest inspect ${t}-arm64 | jq -r '.manifests[] | .digest' | sed -e "s:^:${t%:*}@")
             docker manifest push ${t}
           done
       # Update Docker Hub from README
