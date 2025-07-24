@@ -196,8 +196,8 @@ jobs:
           for t in `echo '${{ steps.meta.outputs.tags }}'`; do
             # Extract the underlying manifests from each manifests list and create a new single manifest list
             docker manifest create ${t} \
-              $(docker manifest inspect ${t}-amd64 | jq -r '.manifests[] | .digest' | sed -e "s:^:${t%:*}@") \
-              $(docker manifest inspect ${t}-arm64 | jq -r '.manifests[] | .digest' | sed -e "s:^:${t%:*}@")
+              $(docker manifest inspect ${t}-amd64 | jq -r '.manifests[] | .digest' | sed -e "s|^|${t%:*}@|") \
+              $(docker manifest inspect ${t}-arm64 | jq -r '.manifests[] | .digest' | sed -e "s|^|${t%:*}@|")
             docker manifest push ${t}
           done
       # Update Docker Hub from README
