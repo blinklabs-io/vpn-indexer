@@ -38,41 +38,41 @@ func BuildSignupTx(
 	price int,
 	duration int,
 	region string,
-) ([]byte, error) {
+) ([]byte, []byte, error) {
 	cfg := config.GetConfig()
 	cc, err := apolloBackend()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	clientAddr, err := serAddress.DecodeAddress(clientAddress)
 	if err != nil {
-		return nil, fmt.Errorf("client address: %w", err)
+		return nil, nil, fmt.Errorf("client address: %w", err)
 	}
 	scriptAddress, err := serAddress.DecodeAddress(cfg.Indexer.ScriptAddress)
 	if err != nil {
-		return nil, fmt.Errorf("script address: %w", err)
+		return nil, nil, fmt.Errorf("script address: %w", err)
 	}
 	scriptHash := scriptAddress.PaymentPart
 	providerAddress, err := serAddress.DecodeAddress(
 		cfg.TxBuilder.ProviderAddress,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("provider address: %w", err)
+		return nil, nil, fmt.Errorf("provider address: %w", err)
 	}
 	// Lookup reference data
 	refData, err := db.ReferenceData()
 	if err != nil {
-		return nil, fmt.Errorf("reference data: %w", err)
+		return nil, nil, fmt.Errorf("reference data: %w", err)
 	}
 	// Parse script ref
 	scriptRef, err := inputRefFromString(cfg.TxBuilder.ScriptRefInput)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	// Get available UTxOs from user's wallet
 	availableUtxos, err := cc.Utxos(clientAddr)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return nil, nil, fmt.Errorf(
 			"lookup UTxOs for address: %s: %w",
 			clientAddr.String(),
 			err,
@@ -81,32 +81,32 @@ func BuildSignupTx(
 	// Choose input UTxOs from user's wallet
 	inputUtxos, err := chooseInputUtxos(availableUtxos, price+5_000_000)
 	if err != nil {
-		return nil, fmt.Errorf("choose input UTxOs: %w", err)
+		return nil, nil, fmt.Errorf("choose input UTxOs: %w", err)
 	}
 	if len(inputUtxos) == 0 {
-		return nil, errors.New("no input UTxOs found")
+		return nil, nil, errors.New("no input UTxOs found")
 	}
 	// Determine client ID from first selected input UTxO
 	clientId := clientIdFromInput(inputUtxos[0].Input)
 	// Determine plan selection ID from price/duration
 	selectionId, err := determinePlanSelection(refData, price, duration)
 	if err != nil {
-		return nil, fmt.Errorf("determine plan selection: %w", err)
+		return nil, nil, fmt.Errorf("determine plan selection: %w", err)
 	}
 	// Get last known slot
 	curSlot, err := cc.LastBlockSlot()
 	if err != nil {
-		return nil, fmt.Errorf("query latest block slot: %w", err)
+		return nil, nil, fmt.Errorf("query latest block slot: %w", err)
 	}
 	// Calculate time for last known slot
 	ogmios := ogmiosClient()
 	systemStart, err := ogmiosSystemStart(ogmios)
 	if err != nil {
-		return nil, fmt.Errorf("query system start: %w", err)
+		return nil, nil, fmt.Errorf("query system start: %w", err)
 	}
 	eraHistory, err := ogmios.EraSummaries(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("query era summaries: %w", err)
+		return nil, nil, fmt.Errorf("query era summaries: %w", err)
 	}
 	curSlotTime := systemStart.Add(
 		time.Duration(
@@ -122,7 +122,7 @@ func BuildSignupTx(
 		SetWalletFromBech32(clientAddress).
 		SetWalletAsChangeAddress()
 	if err != nil {
-		return nil, fmt.Errorf("build transaction: %w", err)
+		return nil, nil, fmt.Errorf("build transaction: %w", err)
 	}
 	// Build client datum
 	clientDatum := PlutusData.PlutusData{
@@ -215,12 +215,12 @@ func BuildSignupTx(
 		).
 		Complete()
 	if err != nil {
-		return nil, fmt.Errorf("build transaction: %w", err)
+		return nil, nil, fmt.Errorf("build transaction: %w", err)
 	}
 	tx := apollob.GetTx()
 	cborData, err := cbor.Encode(tx)
 	if err != nil {
-		return nil, fmt.Errorf("generate transaction CBOR: %w", err)
+		return nil, nil, fmt.Errorf("generate transaction CBOR: %w", err)
 	}
-	return cborData, nil
+	return cborData, clientId, nil
 }

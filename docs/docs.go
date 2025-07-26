@@ -342,6 +342,9 @@ const docTemplate = `{
         "api.TxSignupResponse": {
             "type": "object",
             "properties": {
+                "clientId": {
+                    "type": "string"
+                },
                 "txCbor": {
                     "type": "string"
                 }
