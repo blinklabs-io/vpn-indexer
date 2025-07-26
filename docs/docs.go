@@ -275,7 +275,7 @@ const docTemplate = `{
         "api.ClientListRequest": {
             "type": "object",
             "properties": {
-                "paymentKeyHash": {
+                "clientAddress": {
                     "type": "string"
                 }
             }

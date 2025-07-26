@@ -16,7 +16,7 @@ definitions:
     type: object
   api.ClientListRequest:
     properties:
-      paymentKeyHash:
+      clientAddress:
         type: string
     type: object
   api.ClientProfileRequest:
