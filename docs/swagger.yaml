@@ -59,6 +59,8 @@ definitions:
     type: object
   api.TxSignupResponse:
     properties:
+      clientId:
+        type: string
       txCbor:
         type: string
     type: object

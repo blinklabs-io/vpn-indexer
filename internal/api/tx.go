@@ -33,7 +33,8 @@ type TxSignupRequest struct {
 
 // TxSignupResponse returns an unsigned transaction for a VPN signup
 type TxSignupResponse struct {
-	TxCbor string `json:"txCbor"`
+	ClientId string `json:"clientId"`
+	TxCbor   string `json:"txCbor"`
 }
 
 // handleTxSignup godoc
@@ -61,7 +62,7 @@ func (a *Api) handleTxSignup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	txCbor, err := txbuilder.BuildSignupTx(
+	txCbor, clientId, err := txbuilder.BuildSignupTx(
 		a.db,
 		req.ClientAddress,
 		req.Price,
@@ -80,7 +81,8 @@ func (a *Api) handleTxSignup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpResp := TxSignupResponse{
-		TxCbor: hex.EncodeToString(txCbor),
+		ClientId: hex.EncodeToString(clientId),
+		TxCbor:   hex.EncodeToString(txCbor),
 	}
 	w.Header().Set("Content-Type", "application/json")
 	resp, _ := json.Marshal(tmpResp)
