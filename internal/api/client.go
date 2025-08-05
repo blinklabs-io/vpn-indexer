@@ -374,7 +374,9 @@ func (a *Api) handleClientAvailable(w http.ResponseWriter, r *http.Request) {
 	}
 	if ok {
 		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"msg":"Profile is available"}`))
 	} else {
 		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"msg":"Profile is not available"}`))
 	}
 }
