@@ -77,8 +77,11 @@ func Start(cfg *config.Config, db *database.Database, ca *ca.Ca) error {
 	mainMux.HandleFunc("/api/refdata", api.handleRefData)
 	mainMux.HandleFunc("/api/tx/signup", api.handleTxSignup)
 
-	// Wrap the mainMux with an access-logging middleware
-	mainHandler := api.logMiddleware(mainMux, logger)
+	// Wrap the mainMux with an access-logging and CORS middleware
+	mainHandler := api.logMiddleware(
+		api.corsMiddleware(mainMux),
+		logger,
+	)
 
 	// Start API server
 	logger.Info("starting API listener",
@@ -125,6 +128,18 @@ func (a *Api) logMiddleware(
 			"remote_addr", r.RemoteAddr,
 			"duration", time.Since(startTime).String(),
 		)
+	})
+}
+
+// corsMiddleware adds CORS-related headers to every response
+func (a *Api) corsMiddleware(
+	next http.Handler,
+) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+		next.ServeHTTP(w, r)
 	})
 }
 
