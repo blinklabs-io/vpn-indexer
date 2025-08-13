@@ -75,7 +75,11 @@ func (a *Api) handleClientList(w http.ResponseWriter, r *http.Request) {
 	clientAddr, err := lcommon.NewAddress(req.ClientAddress)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(`{"error":"Invalid request","reason":"invalid client address"}`))
+		_, _ = w.Write(
+			[]byte(
+				`{"error":"Invalid request","reason":"invalid client address"}`,
+			),
+		)
 		return
 	}
 	paymentKeyHash := clientAddr.PaymentKeyHash().Bytes()
