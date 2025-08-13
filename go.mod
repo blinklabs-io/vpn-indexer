@@ -8,7 +8,7 @@ require (
 	github.com/Salvionied/apollo v1.1.2-0.20250710221936-1ac7d482529c // go get github.com/Salvionied/apollo@pv3
 	github.com/SundaeSwap-finance/kugo v1.3.0
 	github.com/SundaeSwap-finance/ogmigo/v6 v6.0.2
-	github.com/aws/aws-sdk-go-v2 v1.36.5
+	github.com/aws/aws-sdk-go-v2 v1.38.0
 	github.com/aws/aws-sdk-go-v2/config v1.29.17
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.83.0
 	github.com/blinklabs-io/adder v0.30.5
@@ -47,7 +47,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.25.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.30.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.34.0 // indirect
-	github.com/aws/smithy-go v1.22.4 // indirect
+	github.com/aws/smithy-go v1.22.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcutil v1.1.6 // indirect
 	github.com/btcsuite/btcutil v1.0.2 // indirect
