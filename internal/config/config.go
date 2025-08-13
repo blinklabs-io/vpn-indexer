@@ -97,9 +97,8 @@ type CrlConfig struct {
 }
 
 type ApiConfig struct {
-	ListenAddress  string `yaml:"address"        envconfig:"API_LISTEN_ADDRESS"`
-	ListenPort     uint   `yaml:"port"           envconfig:"API_LISTEN_PORT"`
-	LogHealthcheck bool   `yaml:"logHealthcheck" envconfig:"API_LOG_HEALTHCHECK"`
+	ListenAddress string `yaml:"address"        envconfig:"API_LISTEN_ADDRESS"`
+	ListenPort    uint   `yaml:"port"           envconfig:"API_LISTEN_PORT"`
 }
 
 type TxBuilderConfig struct {
@@ -143,8 +142,7 @@ var globalConfig = &Config{
 		RevokeTime: time.Date(2025, 06, 11, 15, 45, 03, 0, time.UTC),
 	},
 	Api: ApiConfig{
-		ListenPort:     8080,
-		LogHealthcheck: true,
+		ListenPort: 8080,
 	},
 	TxBuilder: TxBuilderConfig{
 		// NOTE: this shares a stake key with the indexer script address

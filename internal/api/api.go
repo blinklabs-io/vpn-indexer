@@ -77,11 +77,8 @@ func Start(cfg *config.Config, db *database.Database, ca *ca.Ca) error {
 	mainMux.HandleFunc("/api/refdata", api.handleRefData)
 	mainMux.HandleFunc("/api/tx/signup", api.handleTxSignup)
 
-	// Wrap the mainMux with an access-logging and CORS middleware
-	mainHandler := api.logMiddleware(
-		api.corsMiddleware(mainMux),
-		logger,
-	)
+	// Wrap the mainMux with a CORS middleware
+	mainHandler := api.corsMiddleware(mainMux)
 
 	// Start API server
 	logger.Info("starting API listener",
@@ -101,36 +98,6 @@ func Start(cfg *config.Config, db *database.Database, ca *ca.Ca) error {
 	return err
 }
 
-func (a *Api) logMiddleware(
-	next http.Handler,
-	logger *slog.Logger,
-) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Wrap the ResponseWriter to capture status code
-		rec := &statusRecorder{
-			ResponseWriter: w,
-			statusCode:     http.StatusOK,
-		}
-		startTime := time.Now()
-		next.ServeHTTP(rec, r)
-
-		// Skip logging on a healthcheck request if healthcheck logging is disabled
-		if !a.cfg.Api.LogHealthcheck {
-			if r.URL.Path == healthcheckPath {
-				return
-			}
-		}
-
-		logger.Info("handled request",
-			"status", rec.statusCode,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"remote_addr", r.RemoteAddr,
-			"duration", time.Since(startTime).String(),
-		)
-	})
-}
-
 // corsMiddleware adds CORS-related headers to every response
 func (a *Api) corsMiddleware(
 	next http.Handler,
@@ -141,17 +108,6 @@ func (a *Api) corsMiddleware(
 		w.Header().Set("Access-Control-Allow-Headers", "*")
 		next.ServeHTTP(w, r)
 	})
-}
-
-// statusRecorder helps to record the response status code
-type statusRecorder struct {
-	http.ResponseWriter
-	statusCode int
-}
-
-func (r *statusRecorder) WriteHeader(code int) {
-	r.statusCode = code
-	r.ResponseWriter.WriteHeader(code)
 }
 
 // handleHealthcheck responds to GET /healthcheck
