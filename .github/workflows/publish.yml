@@ -57,7 +57,7 @@ jobs:
       statuses: write
     steps:
       - run: "echo \"RELEASE_TAG=${GITHUB_REF#refs/tags/}\" >> $GITHUB_ENV"
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0 https://github.com/actions/checkout/releases/tag/v4.3.0
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0 https://github.com/actions/checkout/releases/tag/v5.0.0
         with:
           fetch-depth: '0'
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0 https://github.com/actions/setup-go/releases/tag/v5.5.0
@@ -104,7 +104,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - run: "echo \"RELEASE_TAG=${GITHUB_REF#refs/tags/}\" >> $GITHUB_ENV"
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0 https://github.com/actions/checkout/releases/tag/v4.3.0
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0 https://github.com/actions/checkout/releases/tag/v5.0.0
         with:
           fetch-depth: '0'
       - name: Set up Docker Buildx
@@ -201,7 +201,7 @@ jobs:
             docker manifest push ${t}
           done
       # Checkout repo so README.md is available for next step
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0 https://github.com/actions/checkout/releases/tag/v4.3.0
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0 https://github.com/actions/checkout/releases/tag/v5.0.0
       # Update Docker Hub from README
       - name: Docker Hub Description
         uses: peter-evans/dockerhub-description@432a30c9e07499fd01da9f8a49f0faf9e0ca5b77 # v4.0.2 https://github.com/peter-evans/dockerhub-description/releases/tag/v4.0.2
