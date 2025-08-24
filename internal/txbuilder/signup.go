@@ -99,7 +99,7 @@ func BuildSignupTx(
 		return nil, nil, fmt.Errorf("query latest block slot: %w", err)
 	}
 	// Calculate time for last known slot
-	ogmios := ogmiosClient()
+	ogmios := OgmiosClient()
 	systemStart, err := ogmiosSystemStart(ogmios)
 	if err != nil {
 		return nil, nil, fmt.Errorf("query system start: %w", err)

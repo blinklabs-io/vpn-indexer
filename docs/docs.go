@@ -247,6 +247,62 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/tx/submit": {
+            "post": {
+                "description": "Submit a signed transaction to the blockchain",
+                "consumes": [
+                    "application/cbor"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "TxSubmit",
+                "parameters": [
+                    {
+                        "enum": [
+                            "application/cbor"
+                        ],
+                        "type": "string",
+                        "description": "Content type",
+                        "name": "Content-Type",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -363,8 +419,6 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "NABU VPN indexer API",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
-	LeftDelim:        "{{",
-	RightDelim:       "}}",
 }
 
 func init() {
