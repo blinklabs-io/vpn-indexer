@@ -44,7 +44,7 @@ var systemStart *time.Time
 
 func apolloBackend() (*OgmiosChainContext.OgmiosChainContext, error) {
 	cfg := config.GetConfig()
-	ogmiosClient := ogmiosClient()
+	ogmiosClient := OgmiosClient()
 	kupoClient := kugo.New(
 		kugo.WithEndpoint(cfg.TxBuilder.KupoUrl),
 		kugo.WithTimeout(defaultKupoTimeout),
@@ -53,7 +53,7 @@ func apolloBackend() (*OgmiosChainContext.OgmiosChainContext, error) {
 	return &occ, nil
 }
 
-func ogmiosClient() *ogmigo.Client {
+func OgmiosClient() *ogmigo.Client {
 	cfg := config.GetConfig()
 	ogmiosClient := ogmigo.New(
 		ogmigo.WithEndpoint(cfg.TxBuilder.OgmiosUrl),

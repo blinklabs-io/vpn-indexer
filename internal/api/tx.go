@@ -15,8 +15,11 @@
 package api
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 
@@ -86,5 +89,51 @@ func (a *Api) handleTxSignup(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	resp, _ := json.Marshal(tmpResp)
+	_, _ = w.Write(resp)
+}
+
+// handleTxSubmit godoc
+//
+//	@Summary		TxSubmit
+//	@Description	Submit a signed transaction to the blockchain
+//	@Produce		json
+//	@Accept			application/cbor
+//	@Param			Content-Type	header		string	true	"Content type"	Enums(application/cbor)
+//	@Success		200				{object}	string	"Ok"
+//	@Failure		400				{object}	string	"Bad Request"
+//	@Failure		405				{object}	string	"Method Not Allowed"
+//	@Failure		415				{object}	string	"Unsupported Media Type"
+//	@Failure		500				{object}	string	"Server Error"
+//	@Router			/api/tx/submit [post]
+func (a *Api) handleTxSubmit(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if r.Header.Get("Content-Type") != "application/cbor" {
+		http.Error(w, "Unsupported Media Type", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	// Read raw transaction bytes from the request body and store in a byte array
+	txRawBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Server Error", http.StatusInternalServerError)
+		return
+	}
+	defer r.Body.Close() //nolint:errcheck
+
+	submit, err := txbuilder.OgmiosClient().SubmitTx(context.Background(), hex.EncodeToString(txRawBytes))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
+		return
+	}
+	if submit.Error != nil {
+		http.Error(w, submit.Error.Message, submit.Error.Code)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	resp, _ := json.Marshal(submit.ID)
 	_, _ = w.Write(resp)
 }
