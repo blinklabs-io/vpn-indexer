@@ -32,6 +32,7 @@ import (
 var ErrRecordNotFound = gorm.ErrRecordNotFound
 
 type Database struct {
+	config *config.Config
 	db     *gorm.DB
 	logger *slog.Logger
 }
@@ -72,6 +73,7 @@ func New(cfg *config.Config, logger *slog.Logger) (*Database, error) {
 		return nil, err
 	}
 	d := &Database{
+		config: cfg,
 		db:     db,
 		logger: logger,
 	}

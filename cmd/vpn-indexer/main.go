@@ -87,7 +87,11 @@ func main() {
 	}
 
 	slog.Info(
-		fmt.Sprintf("vpn-indexer %s started", version.GetVersionString()),
+		fmt.Sprintf(
+			"vpn-indexer %s started for region %s",
+			version.GetVersionString(),
+			cfg.Vpn.Region,
+		),
 	)
 
 	// Start debug listener
