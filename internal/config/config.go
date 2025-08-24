@@ -84,6 +84,7 @@ type S3Config struct {
 
 type VpnConfig struct {
 	Domain string `yaml:"domain"`
+	Region string `yaml:"region"`
 	Port   int    `yaml:"port"`
 }
 
@@ -134,6 +135,7 @@ var globalConfig = &Config{
 	},
 	Vpn: VpnConfig{
 		Domain: "test.domain",
+		Region: "test",
 		Port:   443,
 	},
 	Crl: CrlConfig{

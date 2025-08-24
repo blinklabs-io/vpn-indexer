@@ -318,6 +318,11 @@ func (i *Indexer) handleEventClient(txOutput lcommon.Utxo) error {
 	if err != nil {
 		return err
 	}
+	// Check region match
+	if i.cfg.Vpn.Region != string(clientDatum.Region) {
+		// Region doesn't match, return without error
+		return nil
+	}
 	// Generate client
 	tmpClient := client.New(i.cfg, i.ca, assetName)
 	vpnHost := fmt.Sprintf(
