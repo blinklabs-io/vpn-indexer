@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.24.4
 
 require (
-	github.com/Salvionied/apollo v1.1.2-0.20250710221936-1ac7d482529c // go get github.com/Salvionied/apollo@pv3
+	github.com/Salvionied/apollo v1.2.0
 	github.com/SundaeSwap-finance/kugo v1.3.0
 	github.com/SundaeSwap-finance/ogmigo/v6 v6.1.0
 	github.com/aws/aws-sdk-go-v2 v1.38.0
