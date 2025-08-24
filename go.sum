@@ -1,9 +1,11 @@
+connectrpc.com/connect v1.18.1 h1:PAg7CjSAGvscaf6YZKUefjoih5Z/qYkyaTrBW8xvYPw=
+connectrpc.com/connect v1.18.1/go.mod h1:0292hj1rnx8oFrStN7cB4jjVBeqs+Yx5yDIC2prWDO8=
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
 github.com/KyleBanks/depth v1.2.1 h1:5h8fQADFrWtarTdtDudMmGsC7GPbOAu6RVB3ffsVFHc=
 github.com/KyleBanks/depth v1.2.1/go.mod h1:jzSb9d0L43HxTQfT+oSA1EEp2q+ne2uh6XgeJcm8brE=
-github.com/Salvionied/apollo v1.1.2-0.20250710221936-1ac7d482529c h1:71yi6cApOsSoEEtSc14X3ljI7Y5gZ3YLhBC7sW62hrs=
-github.com/Salvionied/apollo v1.1.2-0.20250710221936-1ac7d482529c/go.mod h1:OS80NIdmH1pOADw72djfJr3/sBTrSLrN83h3Eq/9Kys=
+github.com/Salvionied/apollo v1.3.0 h1:+FMRnNnee+7dgeEuXfW6emvCNQzeNhytUkcoWM19B2o=
+github.com/Salvionied/apollo v1.3.0/go.mod h1:2C/qJI9NGJ5Z04hoNOAGKelQ1n8DEv3Nv+EVyVfcRwE=
 github.com/SundaeSwap-finance/kugo v1.3.0 h1:8+c+LJWJ0iByzRJXMMTGtWtsbWQmMIJxBb9mkId9XDU=
 github.com/SundaeSwap-finance/kugo v1.3.0/go.mod h1:NZT9DzTSH8N8IM0Mzn/ISn8xASefO0Xqipw8TGGpMvg=
 github.com/SundaeSwap-finance/ogmigo/v6 v6.1.0 h1:YhlwRzOvQMQyRyRQEYXQrHqc7nTg7rQPJb86DoSfRCw=
@@ -269,6 +271,8 @@ github.com/tyler-smith/go-bip39 v1.1.0 h1:5eUemwrMargf3BSLRRCalXT93Ns6pQJIjYQN2n
 github.com/tyler-smith/go-bip39 v1.1.0/go.mod h1:gUYDtqQw1JS3ZJ8UWVcGTGqqr6YIN3CWg+kkNaLt55U=
 github.com/utxorpc/go-codegen v0.17.0 h1:cJ7Df9r8Az39lveIcmzcRciIDc3UJFdMSmXg8IAtBPM=
 github.com/utxorpc/go-codegen v0.17.0/go.mod h1:LBVGFns4YAHMhy+Pc8tF5ExkU+N8Wm3srst4omKZy4g=
+github.com/utxorpc/go-sdk v0.0.0-20250603130048-8c2c6c6648ea h1:vA8y/BgEIi0m7pXEx9Xbh39IBHqIoyPH3VmpgPwjEgY=
+github.com/utxorpc/go-sdk v0.0.0-20250603130048-8c2c6c6648ea/go.mod h1:nPuFOlAnLsZ9OxGaaSEBJlTVOrJ929PK8EUypTbMZxg=
 github.com/veraison/go-cose v1.3.0 h1:2/H5w8kdSpQJyVtIhx8gmwPJ2uSz1PkyWFx0idbd7rk=
 github.com/veraison/go-cose v1.3.0/go.mod h1:df09OV91aHoQWLmy1KsDdYiagtXgyAwAl8vFeFn1gMc=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
