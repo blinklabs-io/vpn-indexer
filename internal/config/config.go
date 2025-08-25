@@ -83,9 +83,9 @@ type S3Config struct {
 }
 
 type VpnConfig struct {
-	Domain string `yaml:"domain"`
-	Region string `yaml:"region"`
-	Port   int    `yaml:"port"`
+	Domain string `yaml:"domain" envconfig:"VPN_DOMAIN"`
+	Region string `yaml:"region" envconfig:"VPN_REGION"`
+	Port   int    `yaml:"port"   envconfig:"VPN_PORT"`
 }
 
 type CrlConfig struct {
