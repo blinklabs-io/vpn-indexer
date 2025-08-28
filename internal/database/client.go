@@ -49,7 +49,10 @@ func (d *Database) AddClient(
 func (d *Database) ExpiredClients() ([]Client, error) {
 	var ret []Client
 	result := d.db.
-		Where("expiration < datetime('now') AND region == ?", d.config.Vpn.Region).
+		Where(
+			"expiration < datetime('now') AND region == ?",
+			d.config.Vpn.Region,
+		).
 		Order("expiration").
 		Find(&ret)
 	if result.Error != nil {
