@@ -124,7 +124,8 @@ func (a *Api) handleTxSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close() //nolint:errcheck
 
-	submit, err := txbuilder.OgmiosClient().SubmitTx(context.Background(), hex.EncodeToString(txRawBytes))
+	submit, err := txbuilder.OgmiosClient().
+		SubmitTx(context.Background(), hex.EncodeToString(txRawBytes))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
 		return
