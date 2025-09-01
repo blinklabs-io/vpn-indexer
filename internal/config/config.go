@@ -105,6 +105,7 @@ type ApiConfig struct {
 type TxBuilderConfig struct {
 	KupoUrl         string `yaml:"kupoUrl"         envconfig:"TXBUILDER_KUPO_URL"`
 	OgmiosUrl       string `yaml:"ogmiosUrl"       envconfig:"TXBUILDER_OGMIOS_URL"`
+	SubmitUrl       string `yaml:"submitUrl"       envconfig:"TXBUILDER_SUBMIT_URL"`
 	ProviderAddress string `yaml:"providerAddress" envconfig:"TXBUILDER_PROVIDER_ADDRESS"`
 	ScriptRefInput  string `yaml:"scriptRefInput"  envconfig:"TXBUILDER_SCRIPT_REF_INPUT"`
 }

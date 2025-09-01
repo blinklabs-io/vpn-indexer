@@ -15,7 +15,6 @@
 package api
 
 import (
-	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -124,17 +123,12 @@ func (a *Api) handleTxSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close() //nolint:errcheck
 
-	submit, err := txbuilder.OgmiosClient().
-		SubmitTx(context.Background(), hex.EncodeToString(txRawBytes))
+	txHash, err := txbuilder.SubmitTx(txRawBytes)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
 		return
 	}
-	if submit.Error != nil {
-		http.Error(w, submit.Error.Message, submit.Error.Code)
-		return
-	}
 	w.Header().Set("Content-Type", "application/json")
-	resp, _ := json.Marshal(submit.ID)
+	resp, _ := json.Marshal(txHash)
 	_, _ = w.Write(resp)
 }
