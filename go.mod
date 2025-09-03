@@ -11,8 +11,8 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.38.3
 	github.com/aws/aws-sdk-go-v2/config v1.31.6
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.87.3
-	github.com/blinklabs-io/adder v0.32.1
-	github.com/blinklabs-io/gouroboros v0.133.0
+	github.com/blinklabs-io/adder v0.32.2
+	github.com/blinklabs-io/gouroboros v0.134.1
 	github.com/glebarez/sqlite v1.11.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.23.0
@@ -50,14 +50,14 @@ require (
 	github.com/aws/smithy-go v1.23.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.20.0 // indirect
-	github.com/blinklabs-io/plutigo v0.0.7 // indirect
+	github.com/blinklabs-io/plutigo v0.0.10 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.5 // indirect
 	github.com/btcsuite/btcd/btcutil v1.1.6 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
 	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/consensys/gnark-crypto v0.18.0 // indirect
+	github.com/consensys/gnark-crypto v0.19.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0 // indirect
