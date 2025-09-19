@@ -48,6 +48,7 @@ func apolloBackend() (*OgmiosChainContext.OgmiosChainContext, error) {
 	kupoClient := kugo.New(
 		kugo.WithEndpoint(cfg.TxBuilder.KupoUrl),
 		kugo.WithTimeout(defaultKupoTimeout),
+		kugo.WithLogger(ogmigo.NopLogger),
 	)
 	occ := OgmiosChainContext.NewOgmiosChainContext(*ogmiosClient, *kupoClient)
 	return &occ, nil
