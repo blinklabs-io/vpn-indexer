@@ -12,7 +12,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.31.7
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.88.1
 	github.com/blinklabs-io/adder v0.32.3
-	github.com/blinklabs-io/gouroboros v0.134.2
+	github.com/blinklabs-io/gouroboros v0.135.2
 	github.com/glebarez/sqlite v1.11.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.23.2
@@ -50,7 +50,7 @@ require (
 	github.com/aws/smithy-go v1.23.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.20.0 // indirect
-	github.com/blinklabs-io/plutigo v0.0.11 // indirect
+	github.com/blinklabs-io/plutigo v0.0.12 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.5 // indirect
 	github.com/btcsuite/btcd/btcutil v1.1.6 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
