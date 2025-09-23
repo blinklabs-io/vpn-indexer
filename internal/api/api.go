@@ -76,6 +76,7 @@ func Start(cfg *config.Config, db *database.Database, ca *ca.Ca) error {
 	mainMux.HandleFunc("/api/client/available", api.handleClientAvailable)
 	mainMux.HandleFunc("/api/refdata", api.handleRefData)
 	mainMux.HandleFunc("/api/tx/signup", api.handleTxSignup)
+	mainMux.HandleFunc("/api/tx/renew", api.handleTxRenew)
 	mainMux.HandleFunc("/api/tx/submit", api.handleTxSubmit)
 
 	// Wrap the mainMux with a CORS middleware

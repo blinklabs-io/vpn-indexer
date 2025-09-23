@@ -91,6 +91,72 @@ func (a *Api) handleTxSignup(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(resp)
 }
 
+// TxRenewRequest provides the existing client ID, plan price and duration, and region for the VPN renewal
+type TxRenewRequest struct {
+	ClientAddress string `json:"clientAddress"`
+	ClientId      string `json:"clientId"`
+	Price         int    `json:"price"`
+	Duration      int    `json:"duration"`
+	Region        string `json:"region"`
+}
+
+// TxRenewResponse returns an unsigned transaction for a VPN renewal
+type TxRenewResponse struct {
+	TxCbor string `json:"txCbor"`
+}
+
+// handleTxRenew godoc
+//
+//	@Summary		TxRenew
+//	@Description	Build a transaction for a VPN renewal
+//	@Produce		json
+//	@Accept			json
+//	@Param			TxRenewRequest	body		TxRenewRequest		true	"Renewal Request"
+//	@Success		200				{object}	TxRenewResponse	"Built transaction"
+//	@Failure		400				{object}	string				"Bad Request"
+//	@Failure		405				{object}	string				"Method Not Allowed"
+//	@Failure		500				{object}	string				"Server Error"
+//	@Router			/api/tx/renew [post]
+func (a *Api) handleTxRenew(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req TxRenewRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":"Invalid request"}`))
+		return
+	}
+
+	txCbor, err := txbuilder.BuildRenewTx(
+		a.db,
+		req.ClientAddress,
+		req.ClientId,
+		req.Price,
+		req.Duration,
+		req.Region,
+	)
+	if err != nil {
+		slog.Error(
+			"failed to build renewal TX",
+			"error",
+			err,
+		)
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"error":"Internal server error"}`))
+		return
+	}
+
+	tmpResp := TxRenewResponse{
+		TxCbor: hex.EncodeToString(txCbor),
+	}
+	w.Header().Set("Content-Type", "application/json")
+	resp, _ := json.Marshal(tmpResp)
+	_, _ = w.Write(resp)
+}
+
 // handleTxSubmit godoc
 //
 //	@Summary		TxSubmit
