@@ -314,6 +314,8 @@ func (i *Indexer) handleEventClient(txOutput lcommon.Utxo) error {
 		time.Unix(int64(clientDatum.Expiration/1000), 0),
 		clientDatum.Credential,
 		string(clientDatum.Region),
+		txOutput.Id.Id().Bytes(),
+		uint(txOutput.Id.Index()),
 	)
 	if err != nil {
 		return err
