@@ -14,14 +14,20 @@
 
 package database
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm/clause"
+)
 
 type Client struct {
-	ID         uint   `gorm:"primaryKey"`
-	AssetName  []byte `gorm:"index"`
-	Expiration time.Time
-	Credential []byte
-	Region     string
+	ID            uint   `gorm:"primaryKey"`
+	AssetName     []byte `gorm:"uniqueIndex"`
+	Expiration    time.Time
+	Credential    []byte
+	Region        string
+	TxHash        []byte
+	TxOutputIndex uint
 }
 
 func (Client) TableName() string {
@@ -33,14 +39,22 @@ func (d *Database) AddClient(
 	expiration time.Time,
 	credential []byte,
 	region string,
+	txHash []byte,
+	txOutputIndex uint,
 ) error {
 	tmpItem := Client{
-		AssetName:  assetName,
-		Expiration: expiration,
-		Credential: credential,
-		Region:     region,
+		AssetName:     assetName,
+		Expiration:    expiration,
+		Credential:    credential,
+		Region:        region,
+		TxHash:        txHash,
+		TxOutputIndex: txOutputIndex,
 	}
-	if result := d.db.Create(&tmpItem); result.Error != nil {
+	onConflict := clause.OnConflict{
+		Columns:   []clause.Column{{Name: "asset_name"}},
+		UpdateAll: true,
+	}
+	if result := d.db.Clauses(onConflict).Create(&tmpItem); result.Error != nil {
 		return result.Error
 	}
 	return nil
