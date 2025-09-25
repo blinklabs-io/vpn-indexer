@@ -111,11 +111,11 @@ type TxRenewResponse struct {
 //	@Description	Build a transaction for a VPN renewal
 //	@Produce		json
 //	@Accept			json
-//	@Param			TxRenewRequest	body		TxRenewRequest		true	"Renewal Request"
+//	@Param			TxRenewRequest	body		TxRenewRequest	true	"Renewal Request"
 //	@Success		200				{object}	TxRenewResponse	"Built transaction"
-//	@Failure		400				{object}	string				"Bad Request"
-//	@Failure		405				{object}	string				"Method Not Allowed"
-//	@Failure		500				{object}	string				"Server Error"
+//	@Failure		400				{object}	string			"Bad Request"
+//	@Failure		405				{object}	string			"Method Not Allowed"
+//	@Failure		500				{object}	string			"Server Error"
 //	@Router			/api/tx/renew [post]
 func (a *Api) handleTxRenew(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {

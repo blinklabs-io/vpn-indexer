@@ -199,6 +199,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/tx/renew": {
+            "post": {
+                "description": "Build a transaction for a VPN renewal",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "TxRenew",
+                "parameters": [
+                    {
+                        "description": "Renewal Request",
+                        "name": "TxRenewRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.TxRenewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Built transaction",
+                        "schema": {
+                            "$ref": "#/definitions/api.TxRenewResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/tx/signup": {
             "post": {
                 "description": "Build a transaction for a VPN signup",
@@ -375,6 +424,34 @@ const docTemplate = `{
                 },
                 "price": {
                     "type": "integer"
+                }
+            }
+        },
+        "api.TxRenewRequest": {
+            "type": "object",
+            "properties": {
+                "clientAddress": {
+                    "type": "string"
+                },
+                "clientId": {
+                    "type": "string"
+                },
+                "duration": {
+                    "type": "integer"
+                },
+                "price": {
+                    "type": "integer"
+                },
+                "region": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.TxRenewResponse": {
+            "type": "object",
+            "properties": {
+                "txCbor": {
+                    "type": "string"
                 }
             }
         },

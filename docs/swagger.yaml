@@ -46,6 +46,24 @@ definitions:
       price:
         type: integer
     type: object
+  api.TxRenewRequest:
+    properties:
+      clientAddress:
+        type: string
+      clientId:
+        type: string
+      duration:
+        type: integer
+      price:
+        type: integer
+      region:
+        type: string
+    type: object
+  api.TxRenewResponse:
+    properties:
+      txCbor:
+        type: string
+    type: object
   api.TxSignupRequest:
     properties:
       clientAddress:
@@ -191,6 +209,38 @@ paths:
           schema:
             type: string
       summary: RefData
+  /api/tx/renew:
+    post:
+      consumes:
+      - application/json
+      description: Build a transaction for a VPN renewal
+      parameters:
+      - description: Renewal Request
+        in: body
+        name: TxRenewRequest
+        required: true
+        schema:
+          $ref: '#/definitions/api.TxRenewRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Built transaction
+          schema:
+            $ref: '#/definitions/api.TxRenewResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "405":
+          description: Method Not Allowed
+          schema:
+            type: string
+        "500":
+          description: Server Error
+          schema:
+            type: string
+      summary: TxRenew
   /api/tx/signup:
     post:
       consumes:
