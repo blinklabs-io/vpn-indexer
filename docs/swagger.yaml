@@ -48,16 +48,16 @@ definitions:
     type: object
   api.TxRenewRequest:
     properties:
-      clientAddress:
-        type: string
       clientId:
         type: string
       duration:
         type: integer
+      ownerAddress:
+        type: string
+      paymentAddress:
+        type: string
       price:
         type: integer
-      region:
-        type: string
     type: object
   api.TxRenewResponse:
     properties:
@@ -79,6 +79,20 @@ definitions:
     properties:
       clientId:
         type: string
+      txCbor:
+        type: string
+    type: object
+  api.TxTransferRequest:
+    properties:
+      clientId:
+        type: string
+      ownerAddress:
+        type: string
+      paymentAddress:
+        type: string
+    type: object
+  api.TxTransferResponse:
+    properties:
       txCbor:
         type: string
     type: object
@@ -310,4 +324,36 @@ paths:
           schema:
             type: string
       summary: TxSubmit
+  /api/tx/transfer:
+    post:
+      consumes:
+      - application/json
+      description: Build a transaction for a VPN transfer
+      parameters:
+      - description: Transfer Request
+        in: body
+        name: TxTransferRequest
+        required: true
+        schema:
+          $ref: '#/definitions/api.TxTransferRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Built transaction
+          schema:
+            $ref: '#/definitions/api.TxTransferResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "405":
+          description: Method Not Allowed
+          schema:
+            type: string
+        "500":
+          description: Server Error
+          schema:
+            type: string
+      summary: TxTransfer
 swagger: "2.0"

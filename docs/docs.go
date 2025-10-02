@@ -352,6 +352,55 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/tx/transfer": {
+            "post": {
+                "description": "Build a transaction for a VPN transfer",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "TxTransfer",
+                "parameters": [
+                    {
+                        "description": "Transfer Request",
+                        "name": "TxTransferRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.TxTransferRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Built transaction",
+                        "schema": {
+                            "$ref": "#/definitions/api.TxTransferResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -430,20 +479,20 @@ const docTemplate = `{
         "api.TxRenewRequest": {
             "type": "object",
             "properties": {
-                "clientAddress": {
-                    "type": "string"
-                },
                 "clientId": {
                     "type": "string"
                 },
                 "duration": {
                     "type": "integer"
                 },
+                "ownerAddress": {
+                    "type": "string"
+                },
+                "paymentAddress": {
+                    "type": "string"
+                },
                 "price": {
                     "type": "integer"
-                },
-                "region": {
-                    "type": "string"
                 }
             }
         },
@@ -482,6 +531,28 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "api.TxTransferRequest": {
+            "type": "object",
+            "properties": {
+                "clientId": {
+                    "type": "string"
+                },
+                "ownerAddress": {
+                    "type": "string"
+                },
+                "paymentAddress": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.TxTransferResponse": {
+            "type": "object",
+            "properties": {
+                "txCbor": {
+                    "type": "string"
+                }
+            }
         }
     }
 }`
@@ -496,6 +567,8 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "NABU VPN indexer API",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
+	LeftDelim:        "{{",
+	RightDelim:       "}}",
 }
 
 func init() {
