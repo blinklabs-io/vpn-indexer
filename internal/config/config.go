@@ -126,10 +126,10 @@ var globalConfig = &Config{
 	Indexer: IndexerConfig{
 		Network: "preprod",
 		// NOTE: these values correspond to the block before the reference token and/or script used below appear on-chain
-		IntersectSlot:  103_106_880,
-		IntersectHash:  "f111144737e0998f6f696aebcb82e769a91c57684fbcaaa101226a75901bc481",
-		ScriptAddress:  "addr_test1zzcktgj2c0fsdaqnlhvevcn9sjmwserytt7g0l82pxcvrn2jduk3c6ecrpkrk8qqlr4ep37cx03ytlcn70n93zyemj6sfgz2vs",
-		ReferenceToken: "eddc8f734e487da2204993bd3fb2a6228307c52df2ce0384506d2038.70726f7669646572",
+		IntersectSlot:  103_741_833,
+		IntersectHash:  "753cd54fc17ccc12c2db99598246e19029bbea9a17dc1a38eb27b9280d3379d6",
+		ScriptAddress:  "addr_test1zrdf6wkqjlu6urqtmyeafczgfrl9hhs4hw7usm9slvgzy26jduk3c6ecrpkrk8qqlr4ep37cx03ytlcn70n93zyemj6svnkmku",
+		ReferenceToken: "f043e77d22674a36edfbda3200a6ba9eb966c045ed72eb427cf45c92.70726f7669646572",
 	},
 	Database: DatabaseConfig{
 		Directory: "./.vpn-indexer",
@@ -150,7 +150,7 @@ var globalConfig = &Config{
 	TxBuilder: TxBuilderConfig{
 		// NOTE: this shares a stake key with the indexer script address
 		ProviderAddress: "addr_test1qpjwevqy6mh5hsnudjgpgrtfjwwxdtl7d73e9u0kxg9453jjduk3c6ecrpkrk8qqlr4ep37cx03ytlcn70n93zyemj6sasxnj5",
-		ScriptRefInput:  "bbbe818c99e248c305a0d0ebad7508974f37e342833c55bc0242dcdfbaa2848c#1",
+		ScriptRefInput:  "363fb149456226998f537df63cdfbab015ae4a10cb45bf427b89ffbc53f484c3#1",
 	},
 }
 

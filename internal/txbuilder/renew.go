@@ -34,20 +34,29 @@ import (
 
 func BuildRenewTx(
 	db *database.Database,
-	clientAddress string,
+	paymentAddress string,
+	ownerAddress string,
 	clientId string,
 	price int,
 	duration int,
-	region string,
 ) ([]byte, error) {
 	cfg := config.GetConfig()
 	cc, err := apolloBackend()
 	if err != nil {
 		return nil, err
 	}
-	clientAddr, err := serAddress.DecodeAddress(clientAddress)
+	paymentAddr, err := serAddress.DecodeAddress(paymentAddress)
 	if err != nil {
-		return nil, fmt.Errorf("client address: %w", err)
+		return nil, fmt.Errorf("payment address: %w", err)
+	}
+	ownerAddr := paymentAddr
+	ownerAddrPkh := []byte{}
+	if ownerAddress != "" && ownerAddress != paymentAddress {
+		ownerAddr, err = serAddress.DecodeAddress(ownerAddress)
+		if err != nil {
+			return nil, fmt.Errorf("owner address: %w", err)
+		}
+		ownerAddrPkh = ownerAddr.PaymentPart
 	}
 	scriptAddress, err := serAddress.DecodeAddress(cfg.Indexer.ScriptAddress)
 	if err != nil {
@@ -71,11 +80,11 @@ func BuildRenewTx(
 		return nil, err
 	}
 	// Get available UTxOs from user's wallet
-	availableUtxos, err := cc.Utxos(clientAddr)
+	availableUtxos, err := cc.Utxos(paymentAddr)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"lookup UTxOs for address: %s: %w",
-			clientAddr.String(),
+			paymentAddr.String(),
 			err,
 		)
 	}
@@ -104,10 +113,13 @@ func BuildRenewTx(
 	if err != nil {
 		return nil, fmt.Errorf("lookup client UTxO: %w", err)
 	}
-	// Determine plan selection ID from price/duration
-	selectionId, err := determinePlanSelection(refData, price, duration)
-	if err != nil {
-		return nil, fmt.Errorf("determine plan selection: %w", err)
+	selectionId := -1
+	if price > 0 && duration > 0 {
+		// Determine plan selection ID from price/duration
+		selectionId, err = determinePlanSelection(refData, price, duration)
+		if err != nil {
+			return nil, fmt.Errorf("determine plan selection: %w", err)
+		}
 	}
 	// Get last known slot
 	curSlot, err := cc.LastBlockSlot()
@@ -145,7 +157,7 @@ func BuildRenewTx(
 	// Configure transaction builder
 	apollob := apollo.New(cc)
 	apollob, err = apollob.
-		SetWalletFromBech32(clientAddress).
+		SetWalletFromBech32(paymentAddress).
 		SetWalletAsChangeAddress()
 	if err != nil {
 		return nil, fmt.Errorf("build transaction: %w", err)
@@ -157,8 +169,8 @@ func BuildRenewTx(
 		Value: cbor.NewConstructor(
 			1,
 			cbor.IndefLengthList{
-				client.Credential,
-				[]byte(region),
+				ownerAddr.PaymentPart,
+				client.Region,
 				newExpiry.UnixMilli(),
 			},
 		),
@@ -177,14 +189,14 @@ func BuildRenewTx(
 			Value: cbor.NewConstructor(
 				2,
 				cbor.IndefLengthList{
-					cbor.NewConstructor(1, []any{}),
+					ownerAddrPkh,
 					clientAssetName,
 					selectionId,
 				},
 			),
 		},
 	}
-	apollob, err = apollob.
+	apollob = apollob.
 		// Load all available UTxOs from user's wallet
 		AddLoadedUTxOs(availableUtxos...).
 		// Explicitly set our chosen inputs
@@ -222,11 +234,14 @@ func BuildRenewTx(
 		CollectFrom(
 			*clientUtxo,
 			redeemer,
-		).
-		AddRequiredSigner(
-			serialization.PubKeyHash(clientAddr.PaymentPart),
-		).
-		Complete()
+		)
+	// We only require the current owner to sign if we're changing ownership
+	if len(ownerAddrPkh) > 0 {
+		apollob = apollob.AddRequiredSigner(
+			serialization.PubKeyHash(client.Credential),
+		)
+	}
+	apollob, err = apollob.Complete()
 	if err != nil {
 		return nil, fmt.Errorf("build transaction: %w", err)
 	}
