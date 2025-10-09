@@ -37,7 +37,8 @@ import (
 )
 
 const (
-	defaultKupoTimeout = 1 * time.Second
+	defaultKupoTimeout  = 1 * time.Second
+	transactionTtlSlots = 500
 )
 
 var systemStart *time.Time
