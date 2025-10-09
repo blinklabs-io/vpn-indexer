@@ -217,6 +217,8 @@ func BuildRenewTransferTx(
 		SetFeePadding(200_000).
 		// Set transaction not valid before current slot
 		SetValidityStart(int64(curSlot)).
+		// Set TTL
+		SetTtl(int64(curSlot+transactionTtlSlots)).
 		// Send service payment to provider address
 		PayToAddress(
 			providerAddress, price,
