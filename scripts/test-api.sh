@@ -56,7 +56,7 @@ apiClientList() {
 	local owner_addr=$1
 	local client_id=$2
 
-	curl -s ${API_BASE}/client/list -d '{"ownerAddress":"'${owner_addr}'"}' |
+	curl -s ${API_BASE}/client/list -d '{"clientAddress":"'${owner_addr}'"}' |
 		jq '.[] | select(.id == "'${client_id}'")'
 }
 
@@ -107,7 +107,7 @@ _tmpdir=$(mktemp -d)
 echo "*** Generating TX for signup for user1"
 (
 set -x
-curl -s --fail-with-body ${API_BASE}/tx/signup -d '{"paymentAddress":"'${USER1_ADDR}'","region":"'"${_region}"'","price":'${_price}',"duration":'${_duration}'}' > ${_tmpdir}/user1_api_signup.json
+curl -s --fail-with-body ${API_BASE}/tx/signup -d '{"clientAddress":"'${USER1_ADDR}'","region":"'"${_region}"'","price":'${_price}',"duration":'${_duration}'}' > ${_tmpdir}/user1_api_signup.json
 )
 _client_id=$(jq -r .clientId ${_tmpdir}/user1_api_signup.json)
 txHexToJson $(jq -r .txCbor ${_tmpdir}/user1_api_signup.json) ${_tmpdir}/user1_tx_signup_unsigned.json

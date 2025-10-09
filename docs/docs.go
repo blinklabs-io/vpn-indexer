@@ -429,7 +429,7 @@ const docTemplate = `{
         "api.ClientListRequest": {
             "type": "object",
             "properties": {
-                "ownerAddress": {
+                "clientAddress": {
                     "type": "string"
                 }
             }
@@ -507,14 +507,11 @@ const docTemplate = `{
         "api.TxSignupRequest": {
             "type": "object",
             "properties": {
+                "clientAddress": {
+                    "type": "string"
+                },
                 "duration": {
                     "type": "integer"
-                },
-                "ownerAddress": {
-                    "type": "string"
-                },
-                "paymentAddress": {
-                    "type": "string"
                 },
                 "price": {
                     "type": "integer"

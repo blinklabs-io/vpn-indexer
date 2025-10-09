@@ -16,7 +16,7 @@ definitions:
     type: object
   api.ClientListRequest:
     properties:
-      ownerAddress:
+      clientAddress:
         type: string
     type: object
   api.ClientProfileRequest:
@@ -66,12 +66,10 @@ definitions:
     type: object
   api.TxSignupRequest:
     properties:
+      clientAddress:
+        type: string
       duration:
         type: integer
-      ownerAddress:
-        type: string
-      paymentAddress:
-        type: string
       price:
         type: integer
       region:
