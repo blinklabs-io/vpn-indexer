@@ -93,11 +93,11 @@ func (a *Api) handleTxSignup(w http.ResponseWriter, r *http.Request) {
 
 // TxRenewRequest provides the existing client ID, plan price and duration, and region for the VPN renewal
 type TxRenewRequest struct {
-	ClientAddress string `json:"clientAddress"`
-	ClientId      string `json:"clientId"`
-	Price         int    `json:"price"`
-	Duration      int    `json:"duration"`
-	Region        string `json:"region"`
+	PaymentAddress string `json:"paymentAddress"`
+	OwnerAddress   string `json:"ownerAddress"`
+	ClientId       string `json:"clientId"`
+	Price          int    `json:"price"`
+	Duration       int    `json:"duration"`
 }
 
 // TxRenewResponse returns an unsigned transaction for a VPN renewal
@@ -130,13 +130,13 @@ func (a *Api) handleTxRenew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	txCbor, err := txbuilder.BuildRenewTx(
+	txCbor, err := txbuilder.BuildRenewTransferTx(
 		a.db,
-		req.ClientAddress,
+		req.PaymentAddress,
+		req.OwnerAddress,
 		req.ClientId,
 		req.Price,
 		req.Duration,
-		req.Region,
 	)
 	if err != nil {
 		slog.Error(
@@ -150,6 +150,70 @@ func (a *Api) handleTxRenew(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpResp := TxRenewResponse{
+		TxCbor: hex.EncodeToString(txCbor),
+	}
+	w.Header().Set("Content-Type", "application/json")
+	resp, _ := json.Marshal(tmpResp)
+	_, _ = w.Write(resp)
+}
+
+// TxTransferRequest provides the existing client ID, plan price and duration, and region for the VPN renewal
+type TxTransferRequest struct {
+	PaymentAddress string `json:"paymentAddress"`
+	OwnerAddress   string `json:"ownerAddress"`
+	ClientId       string `json:"clientId"`
+}
+
+// TxTransferResponse returns an unsigned transaction for a VPN renewal
+type TxTransferResponse struct {
+	TxCbor string `json:"txCbor"`
+}
+
+// handleTxTransfer godoc
+//
+//	@Summary		TxTransfer
+//	@Description	Build a transaction for a VPN transfer
+//	@Produce		json
+//	@Accept			json
+//	@Param			TxTransferRequest	body		TxTransferRequest	true	"Transfer Request"
+//	@Success		200					{object}	TxTransferResponse	"Built transaction"
+//	@Failure		400					{object}	string				"Bad Request"
+//	@Failure		405					{object}	string				"Method Not Allowed"
+//	@Failure		500					{object}	string				"Server Error"
+//	@Router			/api/tx/transfer [post]
+func (a *Api) handleTxTransfer(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req TxTransferRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":"Invalid request"}`))
+		return
+	}
+
+	txCbor, err := txbuilder.BuildRenewTransferTx(
+		a.db,
+		req.PaymentAddress,
+		req.OwnerAddress,
+		req.ClientId,
+		0,
+		0,
+	)
+	if err != nil {
+		slog.Error(
+			"failed to build transfer TX",
+			"error",
+			err,
+		)
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"error":"Internal server error"}`))
+		return
+	}
+
+	tmpResp := TxTransferResponse{
 		TxCbor: hex.EncodeToString(txCbor),
 	}
 	w.Header().Set("Content-Type", "application/json")
