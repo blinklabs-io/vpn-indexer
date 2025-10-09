@@ -34,7 +34,8 @@ import (
 
 func BuildSignupTx(
 	db *database.Database,
-	clientAddress string,
+	paymentAddress string,
+	ownerAddress string,
 	price int,
 	duration int,
 	region string,
@@ -44,9 +45,19 @@ func BuildSignupTx(
 	if err != nil {
 		return nil, nil, err
 	}
-	clientAddr, err := serAddress.DecodeAddress(clientAddress)
+	// Decode payment address
+	paymentAddr, err := serAddress.DecodeAddress(paymentAddress)
 	if err != nil {
-		return nil, nil, fmt.Errorf("client address: %w", err)
+		return nil, nil, fmt.Errorf("payment address: %w", err)
+	}
+	// Determine owner credential
+	ownerCredential := paymentAddr.PaymentPart
+	if ownerAddress != "" && ownerAddress != paymentAddress {
+		ownerAddr, err := serAddress.DecodeAddress(ownerAddress)
+		if err != nil {
+			return nil, nil, fmt.Errorf("owner address: %w", err)
+		}
+		ownerCredential = ownerAddr.PaymentPart
 	}
 	scriptAddress, err := serAddress.DecodeAddress(cfg.Indexer.ScriptAddress)
 	if err != nil {
@@ -70,11 +81,11 @@ func BuildSignupTx(
 		return nil, nil, err
 	}
 	// Get available UTxOs from user's wallet
-	availableUtxos, err := cc.Utxos(clientAddr)
+	availableUtxos, err := cc.Utxos(paymentAddr)
 	if err != nil {
 		return nil, nil, fmt.Errorf(
 			"lookup UTxOs for address: %s: %w",
-			clientAddr.String(),
+			paymentAddr.String(),
 			err,
 		)
 	}
@@ -119,7 +130,7 @@ func BuildSignupTx(
 	// Configure transaction builder
 	apollob := apollo.New(cc)
 	apollob, err = apollob.
-		SetWalletFromBech32(clientAddress).
+		SetWalletFromBech32(paymentAddress).
 		SetWalletAsChangeAddress()
 	if err != nil {
 		return nil, nil, fmt.Errorf("build transaction: %w", err)
@@ -131,7 +142,7 @@ func BuildSignupTx(
 		Value: cbor.NewConstructor(
 			1,
 			cbor.IndefLengthList{
-				clientAddr.PaymentPart,
+				ownerCredential,
 				[]byte(region),
 				curSlotTime.
 					Add(time.Duration(duration) * time.Millisecond).
@@ -153,7 +164,7 @@ func BuildSignupTx(
 			Value: cbor.NewConstructor(
 				0,
 				cbor.IndefLengthList{
-					clientAddr.PaymentPart,
+					ownerCredential,
 					[]byte(region),
 					selectionId,
 					cbor.NewConstructor(
@@ -213,7 +224,7 @@ func BuildSignupTx(
 			mintRedeemer,
 		).
 		AddRequiredSigner(
-			serialization.PubKeyHash(clientAddr.PaymentPart),
+			serialization.PubKeyHash(ownerCredential),
 		).
 		Complete()
 	if err != nil {

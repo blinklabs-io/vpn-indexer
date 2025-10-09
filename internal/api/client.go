@@ -33,7 +33,7 @@ import (
 
 // ClientListRequest provides the payment credential hash to search
 type ClientListRequest struct {
-	ClientAddress string `json:"clientAddress"`
+	OwnerAddress string `json:"ownerAddress"`
 }
 
 // Client provides the unique identifier, expiration time, and VPN region for
@@ -72,17 +72,17 @@ func (a *Api) handleClientList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clientAddr, err := lcommon.NewAddress(req.ClientAddress)
+	ownerAddr, err := lcommon.NewAddress(req.OwnerAddress)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write(
 			[]byte(
-				`{"error":"Invalid request","reason":"invalid client address"}`,
+				`{"error":"Invalid request","reason":"invalid owner address"}`,
 			),
 		)
 		return
 	}
-	paymentKeyHash := clientAddr.PaymentKeyHash().Bytes()
+	paymentKeyHash := ownerAddr.PaymentKeyHash().Bytes()
 	clients, err := a.db.ClientsByCredential(paymentKeyHash)
 	if err != nil {
 		slog.Error(
