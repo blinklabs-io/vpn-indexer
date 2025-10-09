@@ -27,10 +27,11 @@ import (
 
 // TxSignupRequest provides the client address, plan price and duration, and region for the VPN signup
 type TxSignupRequest struct {
-	ClientAddress string `json:"clientAddress"`
-	Price         int    `json:"price"`
-	Duration      int    `json:"duration"`
-	Region        string `json:"region"`
+	PaymentAddress string `json:"paymentAddress"`
+	OwnerAddress   string `json:"ownerAddress"`
+	Price          int    `json:"price"`
+	Duration       int    `json:"duration"`
+	Region         string `json:"region"`
 }
 
 // TxSignupResponse returns an unsigned transaction for a VPN signup
@@ -66,7 +67,8 @@ func (a *Api) handleTxSignup(w http.ResponseWriter, r *http.Request) {
 
 	txCbor, clientId, err := txbuilder.BuildSignupTx(
 		a.db,
-		req.ClientAddress,
+		req.PaymentAddress,
+		req.OwnerAddress,
 		req.Price,
 		req.Duration,
 		req.Region,

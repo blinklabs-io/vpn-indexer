@@ -422,7 +422,7 @@
         "api.ClientListRequest": {
             "type": "object",
             "properties": {
-                "clientAddress": {
+                "ownerAddress": {
                     "type": "string"
                 }
             }
@@ -500,11 +500,14 @@
         "api.TxSignupRequest": {
             "type": "object",
             "properties": {
-                "clientAddress": {
-                    "type": "string"
-                },
                 "duration": {
                     "type": "integer"
+                },
+                "ownerAddress": {
+                    "type": "string"
+                },
+                "paymentAddress": {
+                    "type": "string"
                 },
                 "price": {
                     "type": "integer"
