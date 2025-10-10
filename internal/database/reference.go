@@ -76,21 +76,33 @@ func (d *Database) UpdateReferenceData(
 		)
 	}
 	tmpItem := Reference{
+		ID:        referenceId,
 		TxId:      txOutputId.Id().Bytes(),
 		OutputIdx: int(txOutputId.Index()),
 		Prices:    prices,
 		Regions:   tmpRegions,
 	}
-	result := d.db.
-		Session(&gorm.Session{FullSaveAssociations: true}).
-		Clauses(
-			clause.OnConflict{
-				Columns:   []clause.Column{{Name: "id"}},
-				UpdateAll: true,
-			},
-		).Create(&tmpItem)
-	if result.Error != nil {
-		return result.Error
+	err := d.db.Transaction(func(tx *gorm.DB) error {
+		if result := tx.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&ReferencePrice{}); result.Error != nil {
+			return result.Error
+		}
+		if result := tx.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&ReferenceRegion{}); result.Error != nil {
+			return result.Error
+		}
+		result := tx.Session(&gorm.Session{FullSaveAssociations: true}).
+			Clauses(
+				clause.OnConflict{
+					Columns:   []clause.Column{{Name: "id"}},
+					UpdateAll: true,
+				},
+			).Create(&tmpItem)
+		if result.Error != nil {
+			return result.Error
+		}
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 	return nil
 }
