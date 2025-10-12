@@ -124,7 +124,7 @@ func (c *Ca) loadKey(cfg *config.Config) error {
 
 func (c *Ca) GenerateClientCert(clientName string) (*ClientCert, error) {
 	// Generate cert serial number from client name
-	clientSerial := ClientNameToSerialNumber([]byte(clientName))
+	clientSerial := ClientNameToSerialNumber(clientName)
 	// Cert template
 	cert := &x509.Certificate{
 		SerialNumber: clientSerial,
@@ -212,10 +212,10 @@ func (c *Ca) GenerateCRL(
 	return ret, nil
 }
 
-func ClientNameToSerialNumber(clientName []byte) *big.Int {
+func ClientNameToSerialNumber(clientName string) *big.Int {
 	// Hash client name using blake2b-160 to use as cert serial number
 	hasher, _ := blake2b.New(20, nil)
-	hasher.Write(clientName)
+	hasher.Write([]byte(clientName))
 	clientNameHash := hasher.Sum(nil)
 	return new(big.Int).SetBytes(clientNameHash)
 }
