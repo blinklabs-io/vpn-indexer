@@ -28,7 +28,6 @@ import (
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/blinklabs-io/vpn-indexer/internal/ca"
 	"github.com/blinklabs-io/vpn-indexer/internal/config"
-	"golang.org/x/crypto/blake2b"
 )
 
 const profileTemplate = `
@@ -56,7 +55,6 @@ type Client struct {
 	config    *config.Config
 	ca        *ca.Ca
 	assetName []byte
-	id        string
 }
 
 func New(cfg *config.Config, caObj *ca.Ca, assetName []byte) *Client {
@@ -179,14 +177,5 @@ func (c *Client) createS3Client() (*s3.Client, error) {
 }
 
 func (c *Client) identifier() string {
-	// Returned cached response
-	if c.id != "" {
-		return c.id
-	}
-	// Create blake2b-256 hash from client name and encode as hex
-	hasher, _ := blake2b.New(32, nil)
-	hasher.Write(c.assetName)
-	hash := hasher.Sum(nil)
-	c.id = hex.EncodeToString(hash)
-	return c.id
+	return hex.EncodeToString(c.assetName)
 }

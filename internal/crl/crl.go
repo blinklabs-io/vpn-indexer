@@ -114,7 +114,7 @@ func (c *Crl) updateConfigMap() error {
 		revokedCerts = append(
 			revokedCerts,
 			pkix.RevokedCertificate{
-				SerialNumber:   ca.ClientNameToSerialNumber(client.AssetName),
+				SerialNumber:   ca.ClientNameToSerialNumber(hex.EncodeToString(client.AssetName)),
 				RevocationTime: client.Expiration,
 			},
 		)
