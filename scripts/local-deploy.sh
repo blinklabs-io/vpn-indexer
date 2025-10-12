@@ -120,7 +120,7 @@ crl:
   configMapNamespace: vpn-test
   configMapName: test-crl
   configMapKey: crl.pem
-  updateInterval: 1m
+  updateInterval: 2m
 EOF
 
 # Install helm chart
