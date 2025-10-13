@@ -160,7 +160,7 @@ func main() {
 	}
 
 	// Configure CRL
-	_, err = crl.New(cfg, logger, db, ca)
+	crl, err := crl.New(cfg, logger, db, ca)
 	if err != nil {
 		slog.Error(
 			fmt.Sprintf("failed to configure CRL: %s", err),
@@ -169,7 +169,7 @@ func main() {
 	}
 
 	// Start indexer
-	if err := indexer.GetIndexer().Start(cfg, logger, db, ca); err != nil {
+	if err := indexer.GetIndexer().Start(cfg, logger, db, ca, crl); err != nil {
 		slog.Error(
 			fmt.Sprintf("failed to start indexer: %s", err),
 		)

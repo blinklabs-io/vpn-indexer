@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math/big"
+	"sync"
 	"time"
 
 	"github.com/blinklabs-io/vpn-indexer/internal/ca"
@@ -34,11 +35,13 @@ import (
 )
 
 type Crl struct {
-	ca     *ca.Ca
-	config *config.Config
-	db     *database.Database
-	logger *slog.Logger
-	timer  *time.Timer
+	ca                  *ca.Ca
+	config              *config.Config
+	db                  *database.Database
+	logger              *slog.Logger
+	nextScheduledUpdate time.Time
+	needsUpdate         bool
+	needsUpdateMutex    sync.Mutex
 }
 
 func New(
@@ -61,6 +64,12 @@ func New(
 	return crl, nil
 }
 
+func (c *Crl) SetNeedsUpdate() {
+	c.needsUpdateMutex.Lock()
+	c.needsUpdate = true
+	c.needsUpdateMutex.Unlock()
+}
+
 func (c *Crl) k8sClient() (*kubernetes.Clientset, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -74,20 +83,32 @@ func (c *Crl) k8sClient() (*kubernetes.Clientset, error) {
 }
 
 func (c *Crl) scheduleUpdateConfigMap() {
-	c.timer = time.AfterFunc(
-		c.config.Crl.UpdateInterval,
-		func() {
-			if err := c.updateConfigMap(); err != nil {
-				c.logger.Error(
-					fmt.Sprintf(
-						"failed to update CRL ConfigMap: %s",
-						err,
-					),
-				)
+	tickChan := time.Tick(1 * time.Minute)
+	c.nextScheduledUpdate = time.Now().Add(c.config.Crl.UpdateInterval)
+	go func() {
+		for {
+			_, ok := <-tickChan
+			if !ok {
+				return
 			}
-			c.scheduleUpdateConfigMap()
-		},
-	)
+			c.needsUpdateMutex.Lock()
+			if time.Now().After(c.nextScheduledUpdate) || c.needsUpdate {
+				if err := c.updateConfigMap(); err != nil {
+					c.logger.Error(
+						fmt.Sprintf(
+							"failed to update CRL ConfigMap: %s",
+							err,
+						),
+					)
+				}
+				if !c.needsUpdate {
+					c.nextScheduledUpdate = c.nextScheduledUpdate.Add(c.config.Crl.UpdateInterval)
+				}
+				c.needsUpdate = false
+			}
+			c.needsUpdateMutex.Unlock()
+		}
+	}()
 }
 
 func (c *Crl) updateConfigMap() error {

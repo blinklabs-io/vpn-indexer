@@ -34,6 +34,7 @@ import (
 	"github.com/blinklabs-io/vpn-indexer/internal/ca"
 	"github.com/blinklabs-io/vpn-indexer/internal/client"
 	"github.com/blinklabs-io/vpn-indexer/internal/config"
+	"github.com/blinklabs-io/vpn-indexer/internal/crl"
 	"github.com/blinklabs-io/vpn-indexer/internal/database"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -58,6 +59,7 @@ type Indexer struct {
 	cfg               *config.Config
 	db                *database.Database
 	ca                *ca.Ca
+	crl               *crl.Crl
 	logger            *slog.Logger
 	pipeline          *pipeline.Pipeline
 	refTokenPolicyId  lcommon.Blake2b224
@@ -76,10 +78,12 @@ func (i *Indexer) Start(
 	logger *slog.Logger,
 	db *database.Database,
 	ca *ca.Ca,
+	crl *crl.Crl,
 ) error {
 	i.cfg = cfg
 	i.db = db
 	i.ca = ca
+	i.crl = crl
 	i.logger = logger
 	// Parse script address to determine client asset policy ID
 	scriptAddr, err := lcommon.NewAddress(cfg.Indexer.ScriptAddress)
@@ -336,6 +340,8 @@ func (i *Indexer) handleEventClient(txOutput lcommon.Utxo) error {
 	if err != nil {
 		return err
 	}
+	// Trigger CRL update to unblock renewals
+	i.crl.SetNeedsUpdate()
 	i.logger.Info(
 		"generated client",
 		"client",
