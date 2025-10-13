@@ -43,14 +43,14 @@ func init() {
 		RunE:  runSignup,
 	}
 	cmd.Flags().StringVar(&flagClientAddr, "client", "", "client payment bech32 address")
-	cmd.Flags().StringVar(&flagOwnerAddr, "owner", "", "owner bech32 address (defaults to --client)")
+	cmd.Flags().StringVar(&flagOwnerAddr, "owner", "", "owner bech32 address")
 	cmd.Flags().IntVar(&flagPrice, "price", 0, "plan price in lovelace")
 	cmd.Flags().IntVar(&flagDuration, "duration", 0, "plan duration (contract unit)")
 	cmd.Flags().StringVar(&flagRegion, "region", "", "region code")
 
 	// Load from on chain using Kupo/Ogmios
 	cmd.Flags().StringVar(&flagRefJSON, "refdata", "", "path to reference data JSON (optional)")
-	cmd.Flags().StringVar(&flagOgmiosURL, "ogmios-url", "", "Ogmios endpoint (optional; used if datum must be fetched by hash)")
+	cmd.Flags().StringVar(&flagOgmiosURL, "ogmios-url", "", "Ogmios endpoint (optional)")
 	cmd.Flags().StringVar(&flagKupoURL, "kupo-url", "", "Kupo endpoint (used if --refdata not provided)")
 	cmd.Flags().StringVar(&flagScriptAddr, "script-address", "", "script address holding reference UTxO (used if --refdata not provided)")
 
