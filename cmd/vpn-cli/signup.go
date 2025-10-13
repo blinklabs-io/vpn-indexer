@@ -99,7 +99,9 @@ func runSignup(cmd *cobra.Command, _ []string) error {
 		if ferr != nil {
 			return fmt.Errorf("open refdata: %w", ferr)
 		}
-		defer f.Close()
+		defer func() {
+			_ = f.Close()
+		}()
 		ref, err = database.ReferenceFromJSON(f)
 	} else {
 		if strings.TrimSpace(flagKupoURL) == "" || strings.TrimSpace(flagScriptAddr) == "" {
@@ -132,10 +134,6 @@ func runSignup(cmd *cobra.Command, _ []string) error {
 		return writeOut(outPath, cborBytes)
 	}
 	return nil
-}
-
-func cmdCtx() context.Context {
-	return context.Background()
 }
 
 func writeOut(path string, data []byte) error {
