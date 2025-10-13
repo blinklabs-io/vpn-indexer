@@ -45,9 +45,17 @@ var systemStart *time.Time
 
 func apolloBackend() (*OgmiosChainContext.OgmiosChainContext, error) {
 	cfg := config.GetConfig()
+	kupoURL := cfg.TxBuilder.KupoUrl
+
+	// Prefer CLI overrides (if set), otherwise fall back to config.
+	_, overrideKupo := getChainEndpoints()
+	if overrideKupo != "" {
+		kupoURL = overrideKupo
+	}
+
 	ogmiosClient := OgmiosClient()
 	kupoClient := kugo.New(
-		kugo.WithEndpoint(cfg.TxBuilder.KupoUrl),
+		kugo.WithEndpoint(kupoURL),
 		kugo.WithTimeout(defaultKupoTimeout),
 		kugo.WithLogger(ogmigo.NopLogger),
 	)
@@ -57,11 +65,19 @@ func apolloBackend() (*OgmiosChainContext.OgmiosChainContext, error) {
 
 func OgmiosClient() *ogmigo.Client {
 	cfg := config.GetConfig()
+	ogmiosURL := cfg.TxBuilder.OgmiosUrl
+	overrideOgmios, _ := getChainEndpoints()
+	if overrideOgmios != "" {
+		ogmiosURL = overrideOgmios
+	}
 	ogmiosClient := ogmigo.New(
-		ogmigo.WithEndpoint(cfg.TxBuilder.OgmiosUrl),
+		ogmigo.WithEndpoint(ogmiosURL),
 	)
 	return ogmiosClient
 }
+
+// It clears the cached Shelley genesis start time
+func ResetCachedSystemStart() { systemStart = nil }
 
 func ogmiosSystemStart(ogmios *ogmigo.Client) (time.Time, error) {
 	// Return cached system start

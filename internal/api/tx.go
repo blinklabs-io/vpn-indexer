@@ -66,7 +66,7 @@ func (a *Api) handleTxSignup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	txCbor, clientId, err := txbuilder.BuildSignupTx(
-		a.db,
+		txbuilder.SignupDeps{DB: a.db},
 		req.PaymentAddress,
 		req.OwnerAddress,
 		req.Price,
