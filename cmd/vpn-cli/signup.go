@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/blinklabs-io/vpn-indexer/internal/config"
 	"github.com/blinklabs-io/vpn-indexer/internal/database"
 	"github.com/blinklabs-io/vpn-indexer/internal/txbuilder"
 	"github.com/spf13/cobra"
@@ -89,8 +90,6 @@ func runSignup(cmd *cobra.Command, _ []string) error {
 		return errors.New("--region is required")
 	}
 
-	txbuilder.SetChainEndpoints(flagOgmiosURL, flagKupoURL)
-
 	var ref database.Reference
 	var err error
 
@@ -112,6 +111,16 @@ func runSignup(cmd *cobra.Command, _ []string) error {
 	}
 	if err != nil {
 		return err
+	}
+
+	// Override config fields from CLI (if provided)
+	cfg := config.GetConfig()
+	if flagKupoURL != "" {
+		cfg.TxBuilder.KupoUrl = flagKupoURL
+	}
+	if flagOgmiosURL != "" {
+		cfg.TxBuilder.OgmiosUrl = flagOgmiosURL
+		txbuilder.ResetCachedSystemStart()
 	}
 
 	cborBytes, _, err := txbuilder.BuildSignupTx(

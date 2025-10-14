@@ -45,17 +45,10 @@ var systemStart *time.Time
 
 func apolloBackend() (*OgmiosChainContext.OgmiosChainContext, error) {
 	cfg := config.GetConfig()
-	kupoURL := cfg.TxBuilder.KupoUrl
-
-	// Prefer CLI overrides (if set), otherwise fall back to config.
-	_, overrideKupo := getChainEndpoints()
-	if overrideKupo != "" {
-		kupoURL = overrideKupo
-	}
 
 	ogmiosClient := OgmiosClient()
 	kupoClient := kugo.New(
-		kugo.WithEndpoint(kupoURL),
+		kugo.WithEndpoint(cfg.TxBuilder.KupoUrl),
 		kugo.WithTimeout(defaultKupoTimeout),
 		kugo.WithLogger(ogmigo.NopLogger),
 	)
@@ -65,13 +58,8 @@ func apolloBackend() (*OgmiosChainContext.OgmiosChainContext, error) {
 
 func OgmiosClient() *ogmigo.Client {
 	cfg := config.GetConfig()
-	ogmiosURL := cfg.TxBuilder.OgmiosUrl
-	overrideOgmios, _ := getChainEndpoints()
-	if overrideOgmios != "" {
-		ogmiosURL = overrideOgmios
-	}
 	ogmiosClient := ogmigo.New(
-		ogmigo.WithEndpoint(ogmiosURL),
+		ogmigo.WithEndpoint(cfg.TxBuilder.OgmiosUrl),
 	)
 	return ogmiosClient
 }
