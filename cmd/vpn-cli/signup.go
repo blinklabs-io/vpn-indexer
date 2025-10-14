@@ -45,7 +45,7 @@ func init() {
 	cmd.Flags().StringVar(&flagPaymentAddr, "payment", "", "client payment bech32 address")
 	cmd.Flags().StringVar(&flagOwnerAddr, "owner", "", "owner bech32 address")
 	cmd.Flags().IntVar(&flagPrice, "price", 0, "plan price in lovelace")
-	cmd.Flags().IntVar(&flagDuration, "duration", 0, "plan duration (contract unit)")
+	cmd.Flags().IntVar(&flagDuration, "duration", 0, "plan duration in milliseconds")
 	cmd.Flags().StringVar(&flagRegion, "region", "", "region code")
 
 	// Load from on chain using Kupo/Ogmios
