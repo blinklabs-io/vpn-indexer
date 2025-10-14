@@ -14,13 +14,13 @@ import (
 )
 
 var (
-	outPath        string
-	format         string
-	flagClientAddr string
-	flagOwnerAddr  string
-	flagPrice      int
-	flagDuration   int
-	flagRegion     string
+	outPath         string
+	format          string
+	flagPaymentAddr string
+	flagOwnerAddr   string
+	flagPrice       int
+	flagDuration    int
+	flagRegion      string
 
 	flagRefJSON    string
 	flagOgmiosURL  string
@@ -42,7 +42,7 @@ func init() {
 		Short: "Build an unsigned signup transaction",
 		RunE:  runSignup,
 	}
-	cmd.Flags().StringVar(&flagClientAddr, "client", "", "client payment bech32 address")
+	cmd.Flags().StringVar(&flagPaymentAddr, "payment", "", "client payment bech32 address")
 	cmd.Flags().StringVar(&flagOwnerAddr, "owner", "", "owner bech32 address")
 	cmd.Flags().IntVar(&flagPrice, "price", 0, "plan price in lovelace")
 	cmd.Flags().IntVar(&flagDuration, "duration", 0, "plan duration (contract unit)")
@@ -76,7 +76,7 @@ func runSignup(cmd *cobra.Command, _ []string) error {
 	default:
 		return fmt.Errorf("invalid --format %q (must be hex|cbor)", format)
 	}
-	if flagClientAddr == "" {
+	if flagPaymentAddr == "" {
 		return errors.New("--client is required")
 	}
 	if flagPrice <= 0 {
@@ -116,7 +116,7 @@ func runSignup(cmd *cobra.Command, _ []string) error {
 
 	cborBytes, _, err := txbuilder.BuildSignupTx(
 		txbuilder.SignupDeps{Ref: &ref},
-		flagClientAddr,
+		flagPaymentAddr,
 		flagOwnerAddr,
 		flagPrice,
 		flagDuration,
