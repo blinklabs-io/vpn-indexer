@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -48,18 +47,16 @@ func init() {
 	cmd.Flags().IntVar(&flagPrice, "price", 0, "plan price in lovelace")
 	cmd.Flags().IntVar(&flagDuration, "duration", 0, "plan duration in milliseconds")
 	cmd.Flags().StringVar(&flagRegion, "region", "", "region code")
+	cmd.Flags().StringVar(&flagRefJSON, "refdata", "", "path to reference data JSON (optional)")
 
 	// Load from on chain using Kupo/Ogmios
-	cmd.Flags().StringVar(&flagRefJSON, "refdata", "", "path to reference data JSON (optional)")
 	cmd.Flags().StringVar(&flagOgmiosURL, "ogmios-url", "", "Ogmios endpoint (optional)")
 	cmd.Flags().StringVar(&flagKupoURL, "kupo-url", "", "Kupo endpoint (used if --refdata not provided)")
-	cmd.Flags().StringVar(&flagScriptAddr, "script-address", "", "script address holding reference UTxO (used if --refdata not provided)")
 
-	_ = cmd.MarkFlagRequired("client")
+	_ = cmd.MarkFlagRequired("payment")
 	_ = cmd.MarkFlagRequired("price")
 	_ = cmd.MarkFlagRequired("duration")
 	_ = cmd.MarkFlagRequired("region")
-	_ = cmd.MarkFlagRequired("refdata") // refadata will be required till we load from on chain
 
 	rootCmd.AddCommand(cmd)
 }
@@ -90,39 +87,37 @@ func runSignup(cmd *cobra.Command, _ []string) error {
 		return errors.New("--region is required")
 	}
 
-	var ref database.Reference
-	var err error
+	// Load global config (no file needed)
+	if _, err := config.Load(""); err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+	cfg := config.GetConfig()
 
+	var ref database.Reference
 	if strings.TrimSpace(flagRefJSON) != "" {
-		f, ferr := os.Open(flagRefJSON)
-		if ferr != nil {
-			return fmt.Errorf("open refdata: %w", ferr)
+		f, err := os.Open(flagRefJSON)
+		if err != nil {
+			return fmt.Errorf("open refdata: %w", err)
 		}
 		defer func() {
 			_ = f.Close()
 		}()
 		ref, err = database.ReferenceFromJSON(f)
-	} else {
-		if strings.TrimSpace(flagKupoURL) == "" || strings.TrimSpace(flagScriptAddr) == "" {
-			return errors.New("missing chain flags: provide --kupo-url and --script-address, or use --refdata")
+		if err != nil {
+			return err
 		}
-		// TODO: Need to write the code to load the ref data from chain using flagKupoURL, flagOgmiosURL
-		ref, err = database.LoadFromChain(context.Background(), flagOgmiosURL, flagKupoURL, flagScriptAddr)
-	}
-	if err != nil {
-		return err
-	}
-
-	// Override config fields from CLI (if provided)
-	cfg := config.GetConfig()
-	if flagKupoURL != "" {
-		cfg.TxBuilder.KupoUrl = flagKupoURL
-	}
-	if flagOgmiosURL != "" {
-		cfg.TxBuilder.OgmiosUrl = flagOgmiosURL
-		txbuilder.ResetCachedSystemStart()
+	} else {
+		// Override config fields from CLI (if provided)
+		if flagKupoURL != "" {
+			cfg.TxBuilder.KupoUrl = flagKupoURL
+		}
+		if flagOgmiosURL != "" {
+			cfg.TxBuilder.OgmiosUrl = flagOgmiosURL
+			txbuilder.ResetCachedSystemStart()
+		}
 	}
 
+	// Build the unsigned transaction using same path that API used
 	cborBytes, _, err := txbuilder.BuildSignupTx(
 		txbuilder.SignupDeps{Ref: &ref},
 		flagPaymentAddr,

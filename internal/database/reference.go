@@ -15,10 +15,8 @@
 package database
 
 import (
-	"context"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 
@@ -178,9 +176,4 @@ func WriteReferenceJSON(w io.Writer, ref Reference) error {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	return enc.Encode(out)
-}
-
-func LoadFromChain(ctx context.Context, ogmiosURL, kupoURL, scriptAddress string) (Reference, error) {
-	// TODO: Need to complete implementing this part.
-	return Reference{}, errors.New("on-chain refdata loading is disabled for now; use --refdata")
 }
