@@ -22,10 +22,9 @@ var (
 	flagDuration    int
 	flagRegion      string
 
-	flagRefJSON    string
-	flagOgmiosURL  string
-	flagKupoURL    string
-	flagScriptAddr string
+	flagRefJSON   string
+	flagOgmiosURL string
+	flagKupoURL   string
 )
 
 var rootCmd = &cobra.Command{
