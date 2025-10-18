@@ -11,7 +11,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.39.2
 	github.com/aws/aws-sdk-go-v2/config v1.31.12
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.88.4
-	github.com/blinklabs-io/adder v0.32.5
+	github.com/blinklabs-io/adder v0.32.6
 	github.com/blinklabs-io/gouroboros v0.135.2
 	github.com/glebarez/sqlite v1.11.0
 	github.com/kelseyhightower/envconfig v1.4.0
@@ -50,7 +50,7 @@ require (
 	github.com/aws/smithy-go v1.23.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.20.0 // indirect
-	github.com/blinklabs-io/plutigo v0.0.12 // indirect
+	github.com/blinklabs-io/plutigo v0.0.13 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.5 // indirect
 	github.com/btcsuite/btcd/btcutil v1.1.6 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
@@ -107,7 +107,7 @@ require (
 	golang.org/x/text v0.30.0 // indirect
 	golang.org/x/time v0.9.0 // indirect
 	golang.org/x/tools v0.37.0 // indirect
-	google.golang.org/protobuf v1.36.8 // indirect
+	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
