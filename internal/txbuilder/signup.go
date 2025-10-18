@@ -32,8 +32,13 @@ import (
 	"github.com/blinklabs-io/vpn-indexer/internal/database"
 )
 
+type SignupDeps struct {
+	DB  *database.Database
+	Ref *database.Reference
+}
+
 func BuildSignupTx(
-	db *database.Database,
+	deps SignupDeps,
 	paymentAddress string,
 	ownerAddress string,
 	price int,
@@ -70,10 +75,17 @@ func BuildSignupTx(
 	if err != nil {
 		return nil, nil, fmt.Errorf("provider address: %w", err)
 	}
-	// Lookup reference data
-	refData, err := db.ReferenceData()
-	if err != nil {
-		return nil, nil, fmt.Errorf("reference data: %w", err)
+	var refData database.Reference
+	switch {
+	case deps.Ref != nil:
+		refData = *deps.Ref
+	case deps.DB != nil:
+		refData, err = deps.DB.ReferenceData()
+		if err != nil {
+			return nil, nil, fmt.Errorf("reference data: %w", err)
+		}
+	default:
+		return nil, nil, errors.New("reference data not provided (missing deps.Ref and deps.DB)")
 	}
 	// Parse script ref
 	scriptRef, err := inputRefFromString(cfg.TxBuilder.ScriptRefInput)
