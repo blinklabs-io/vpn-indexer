@@ -45,7 +45,6 @@ func init() {
 	cmd.Flags().IntVar(&flagPrice, "price", 0, "plan price in lovelace")
 	cmd.Flags().IntVar(&flagDuration, "duration", 0, "plan duration in milliseconds")
 	cmd.Flags().StringVar(&flagRegion, "region", "", "region code")
-	cmd.Flags().StringVar(&flagRefJSON, "refdata", "", "path to reference data JSON (optional)")
 
 	// Load from on chain using Kupo/Ogmios
 	cmd.Flags().StringVar(&flagOgmiosURL, "ogmios-url", "", "Ogmios endpoint (optional)")
