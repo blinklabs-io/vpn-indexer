@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/blinklabs-io/vpn-indexer/internal/config"
-	"github.com/blinklabs-io/vpn-indexer/internal/database"
 	"github.com/blinklabs-io/vpn-indexer/internal/txbuilder"
 	"github.com/spf13/cobra"
 )
@@ -91,29 +90,25 @@ func runSignup(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("load config: %w", err)
 	}
 	cfg := config.GetConfig()
+	if flagKupoURL != "" {
+		cfg.TxBuilder.KupoUrl = flagKupoURL
+	}
+	if flagOgmiosURL != "" {
+		cfg.TxBuilder.OgmiosUrl = flagOgmiosURL
+		txbuilder.ResetCachedSystemStart()
+	}
 
-	var ref database.Reference
-	if strings.TrimSpace(flagRefJSON) != "" {
-		f, err := os.Open(flagRefJSON)
-		if err != nil {
-			return fmt.Errorf("open refdata: %w", err)
-		}
-		defer func() {
-			_ = f.Close()
-		}()
-		ref, err = database.ReferenceFromJSON(f)
-		if err != nil {
-			return err
-		}
-	} else {
-		// Override config fields from CLI (if provided)
-		if flagKupoURL != "" {
-			cfg.TxBuilder.KupoUrl = flagKupoURL
-		}
-		if flagOgmiosURL != "" {
-			cfg.TxBuilder.OgmiosUrl = flagOgmiosURL
-			txbuilder.ResetCachedSystemStart()
-		}
+	if strings.TrimSpace(cfg.TxBuilder.KupoUrl) == "" {
+		return fmt.Errorf("kupo url is required (set --kupo-url)")
+	}
+	if strings.TrimSpace(cfg.TxBuilder.OgmiosUrl) == "" {
+		return fmt.Errorf("ogmios url is required (set --ogmios-url)")
+	}
+
+	// Load reference data from Kupo
+	ref, err := loadReferenceFromKugoClient(cmd.Context())
+	if err != nil {
+		return fmt.Errorf("load reference (kupo): %w", err)
 	}
 
 	// Build the unsigned transaction using same path that API used
