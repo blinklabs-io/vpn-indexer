@@ -15,11 +15,6 @@
 package database
 
 import (
-	"encoding/hex"
-	"encoding/json"
-	"fmt"
-	"io"
-
 	lcommon "github.com/blinklabs-io/gouroboros/ledger/common"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -110,70 +105,4 @@ func (d *Database) UpdateReferenceData(
 		return err
 	}
 	return nil
-}
-
-// referenceJSON is a CLI/JSON view for Reference without touching db.
-type referenceJSON struct {
-	// txId is hex-encoded & decodes to Reference.TxId ([]byte)
-	TxId      string           `json:"txId"`
-	OutputIdx int              `json:"outputIdx"`
-	Prices    []referencePrice `json:"prices"`
-	Regions   []string         `json:"regions"`
-}
-
-type referencePrice struct {
-	Duration int `json:"duration"`
-	Price    int `json:"price"`
-}
-
-func ReferenceFromJSON(r io.Reader) (Reference, error) {
-	var in referenceJSON
-	if err := json.NewDecoder(r).Decode(&in); err != nil {
-		return Reference{}, fmt.Errorf("parse refdata json: %w", err)
-	}
-	txid, err := hex.DecodeString(in.TxId)
-	if err != nil {
-		return Reference{}, fmt.Errorf("refdata.txId hex: %w", err)
-	}
-
-	prices := make([]ReferencePrice, 0, len(in.Prices))
-	for _, p := range in.Prices {
-		prices = append(prices, ReferencePrice{
-			Duration: p.Duration,
-			Price:    p.Price,
-		})
-	}
-	regions := make([]ReferenceRegion, 0, len(in.Regions))
-	for _, name := range in.Regions {
-		regions = append(regions, ReferenceRegion{Name: name})
-	}
-
-	return Reference{
-		TxId:      txid,
-		OutputIdx: in.OutputIdx,
-		Prices:    prices,
-		Regions:   regions,
-	}, nil
-}
-
-// It encodes a Reference to JSON using a stable schema.
-func WriteReferenceJSON(w io.Writer, ref Reference) error {
-	out := referenceJSON{
-		TxId:      hex.EncodeToString(ref.TxId),
-		OutputIdx: ref.OutputIdx,
-		Prices:    make([]referencePrice, 0, len(ref.Prices)),
-		Regions:   make([]string, 0, len(ref.Regions)),
-	}
-	for _, p := range ref.Prices {
-		out.Prices = append(out.Prices, referencePrice{
-			Duration: p.Duration,
-			Price:    p.Price,
-		})
-	}
-	for _, r := range ref.Regions {
-		out.Regions = append(out.Regions, r.Name)
-	}
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
-	return enc.Encode(out)
 }
