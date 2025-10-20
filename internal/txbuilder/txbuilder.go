@@ -63,6 +63,11 @@ func OgmiosClient() *ogmigo.Client {
 	return ogmiosClient
 }
 
+// It clears the cached Shelley genesis start time
+func ResetCachedSystemStart() {
+	systemStart = nil
+}
+
 func ogmiosSystemStart(ogmios *ogmigo.Client) (time.Time, error) {
 	// Return cached system start
 	if systemStart != nil {
