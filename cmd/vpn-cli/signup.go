@@ -21,7 +21,6 @@ var (
 	flagDuration    int
 	flagRegion      string
 
-	flagRefJSON   string
 	flagOgmiosURL string
 	flagKupoURL   string
 )
