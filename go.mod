@@ -12,7 +12,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.31.12
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.88.4
 	github.com/blinklabs-io/adder v0.32.6
-	github.com/blinklabs-io/gouroboros v0.135.2
+	github.com/blinklabs-io/gouroboros v0.136.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.23.2
