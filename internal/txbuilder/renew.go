@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"time"
 
@@ -41,6 +40,10 @@ func BuildRenewTransferTx(
 	price int,
 	duration int,
 ) ([]byte, error) {
+	// Validate inputs
+	if paymentAddress == "" {
+		return nil, NewInputValidationError("empty payment address provided")
+	}
 	cfg := config.GetConfig()
 	cc, err := apolloBackend()
 	if err != nil {
@@ -58,7 +61,7 @@ func BuildRenewTransferTx(
 	// Decode payment address
 	paymentAddr, err := serAddress.DecodeAddress(paymentAddress)
 	if err != nil {
-		return nil, fmt.Errorf("payment address: %w", err)
+		return nil, NewInputValidationError("failed to decode payment address")
 	}
 	// Determine owner credential
 	// Use existing owner for client by default
@@ -66,7 +69,7 @@ func BuildRenewTransferTx(
 	if ownerAddress != "" && ownerAddress != paymentAddress {
 		ownerAddr, err := serAddress.DecodeAddress(ownerAddress)
 		if err != nil {
-			return nil, fmt.Errorf("owner address: %w", err)
+			return nil, NewInputValidationError("failed to decode owner address")
 		}
 		ownerCredential = ownerAddr.PaymentPart
 	}
@@ -113,7 +116,7 @@ func BuildRenewTransferTx(
 		return nil, fmt.Errorf("choose input UTxOs: %w", err)
 	}
 	if len(inputUtxos) == 0 {
-		return nil, errors.New("no input UTxOs found")
+		return nil, NewInputValidationError("no input UTxOs found")
 	}
 	// Lookup UTxO for client asset
 	clientUtxo, err := cc.GetUtxoFromRef(
@@ -130,7 +133,7 @@ func BuildRenewTransferTx(
 	if price > 0 && duration > 0 {
 		selectionId, err = determinePlanSelection(refData, price, duration)
 		if err != nil {
-			return nil, fmt.Errorf("determine plan selection: %w", err)
+			return nil, NewInputValidationError("could not determine plan selection from provided price/duration")
 		}
 	}
 	// Get last known slot
