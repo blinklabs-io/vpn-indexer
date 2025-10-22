@@ -17,6 +17,7 @@ package api
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -79,8 +80,14 @@ func (a *Api) handleTxSignup(w http.ResponseWriter, r *http.Request) {
 			"error",
 			err,
 		)
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(`{"error":"Internal server error"}`))
+		var validationErr txbuilder.InputValidationError
+		if errors.As(err, &validationErr) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = fmt.Fprintf(w, `{"error":"Invalid request: %s"}`, validationErr)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`{"error":"Internal server error"}`))
+		}
 		return
 	}
 
@@ -146,8 +153,14 @@ func (a *Api) handleTxRenew(w http.ResponseWriter, r *http.Request) {
 			"error",
 			err,
 		)
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(`{"error":"Internal server error"}`))
+		var validationErr txbuilder.InputValidationError
+		if errors.As(err, &validationErr) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = fmt.Fprintf(w, `{"error":"Invalid request: %s"}`, validationErr)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`{"error":"Internal server error"}`))
+		}
 		return
 	}
 
@@ -210,8 +223,14 @@ func (a *Api) handleTxTransfer(w http.ResponseWriter, r *http.Request) {
 			"error",
 			err,
 		)
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(`{"error":"Internal server error"}`))
+		var validationErr txbuilder.InputValidationError
+		if errors.As(err, &validationErr) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = fmt.Fprintf(w, `{"error":"Invalid request: %s"}`, validationErr)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`{"error":"Internal server error"}`))
+		}
 		return
 	}
 

@@ -166,3 +166,18 @@ func determinePlanSelection(
 	}
 	return 0, errors.New("selection not found")
 }
+
+// InputValidationError is a custom error type representing input validation errors
+type InputValidationError struct {
+	msg string
+}
+
+func NewInputValidationError(msg string) error {
+	return InputValidationError{
+		msg: msg,
+	}
+}
+
+func (e InputValidationError) Error() string {
+	return e.msg
+}

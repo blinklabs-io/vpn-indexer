@@ -45,6 +45,13 @@ func BuildSignupTx(
 	duration int,
 	region string,
 ) ([]byte, []byte, error) {
+	// Validate inputs
+	if region == "" {
+		return nil, nil, NewInputValidationError("empty region provided")
+	}
+	if paymentAddress == "" {
+		return nil, nil, NewInputValidationError("empty payment address provided")
+	}
 	cfg := config.GetConfig()
 	cc, err := apolloBackend()
 	if err != nil {
@@ -53,14 +60,14 @@ func BuildSignupTx(
 	// Decode payment address
 	paymentAddr, err := serAddress.DecodeAddress(paymentAddress)
 	if err != nil {
-		return nil, nil, fmt.Errorf("payment address: %w", err)
+		return nil, nil, NewInputValidationError("failed to decode payment address")
 	}
 	// Determine owner credential
 	ownerCredential := paymentAddr.PaymentPart
 	if ownerAddress != "" && ownerAddress != paymentAddress {
 		ownerAddr, err := serAddress.DecodeAddress(ownerAddress)
 		if err != nil {
-			return nil, nil, fmt.Errorf("owner address: %w", err)
+			return nil, nil, NewInputValidationError("failed to decode owner address")
 		}
 		ownerCredential = ownerAddr.PaymentPart
 	}
@@ -87,6 +94,16 @@ func BuildSignupTx(
 	default:
 		return nil, nil, errors.New("reference data not provided (missing deps.Ref and deps.DB)")
 	}
+	// Validate region
+	foundRegion := false
+	for _, refDataRegion := range refData.Regions {
+		if region == refDataRegion.Name {
+			foundRegion = true
+		}
+	}
+	if !foundRegion {
+		return nil, nil, NewInputValidationError("provided region not valid")
+	}
 	// Parse script ref
 	scriptRef, err := inputRefFromString(cfg.TxBuilder.ScriptRefInput)
 	if err != nil {
@@ -107,14 +124,14 @@ func BuildSignupTx(
 		return nil, nil, fmt.Errorf("choose input UTxOs: %w", err)
 	}
 	if len(inputUtxos) == 0 {
-		return nil, nil, errors.New("no input UTxOs found")
+		return nil, nil, NewInputValidationError("no input UTxOs found")
 	}
 	// Determine client ID from first selected input UTxO
 	clientId := clientIdFromInput(inputUtxos[0].Input)
 	// Determine plan selection ID from price/duration
 	selectionId, err := determinePlanSelection(refData, price, duration)
 	if err != nil {
-		return nil, nil, fmt.Errorf("determine plan selection: %w", err)
+		return nil, nil, NewInputValidationError("could not determine plan selection from provided price/duration")
 	}
 	// Get last known slot
 	curSlot, err := cc.LastBlockSlot()
