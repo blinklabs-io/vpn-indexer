@@ -7,7 +7,7 @@ toolchain go1.24.4
 require (
 	github.com/Salvionied/apollo v1.3.0
 	github.com/SundaeSwap-finance/kugo v1.3.0
-	github.com/SundaeSwap-finance/ogmigo/v6 v6.1.0
+	github.com/SundaeSwap-finance/ogmigo/v6 v6.2.0
 	github.com/aws/aws-sdk-go-v2 v1.39.3
 	github.com/aws/aws-sdk-go-v2/config v1.31.12
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.88.5
