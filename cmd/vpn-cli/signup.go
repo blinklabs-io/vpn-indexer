@@ -31,23 +31,29 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&outPath, "out", "o", "", "output file (default: stdout)")
-	rootCmd.PersistentFlags().StringVar(&format, "format", "hex", "output format: hex|cbor")
+	rootCmd.PersistentFlags().
+		StringVarP(&outPath, "out", "o", "", "output file (default: stdout)")
+	rootCmd.PersistentFlags().
+		StringVar(&format, "format", "hex", "output format: hex|cbor")
 
 	cmd := &cobra.Command{
 		Use:   "signup",
 		Short: "Build an unsigned signup transaction",
 		RunE:  runSignup,
 	}
-	cmd.Flags().StringVar(&flagPaymentAddr, "payment", "", "client payment bech32 address")
+	cmd.Flags().
+		StringVar(&flagPaymentAddr, "payment", "", "client payment bech32 address")
 	cmd.Flags().StringVar(&flagOwnerAddr, "owner", "", "owner bech32 address")
 	cmd.Flags().IntVar(&flagPrice, "price", 0, "plan price in lovelace")
-	cmd.Flags().IntVar(&flagDuration, "duration", 0, "plan duration in milliseconds")
+	cmd.Flags().
+		IntVar(&flagDuration, "duration", 0, "plan duration in milliseconds")
 	cmd.Flags().StringVar(&flagRegion, "region", "", "region code")
 
 	// Load from on chain using Kupo/Ogmios
-	cmd.Flags().StringVar(&flagOgmiosURL, "ogmios-url", "", "Ogmios endpoint (optional)")
-	cmd.Flags().StringVar(&flagKupoURL, "kupo-url", "", "Kupo endpoint (used if --refdata not provided)")
+	cmd.Flags().
+		StringVar(&flagOgmiosURL, "ogmios-url", "", "Ogmios endpoint (optional)")
+	cmd.Flags().
+		StringVar(&flagKupoURL, "kupo-url", "", "Kupo endpoint (used if --refdata not provided)")
 
 	_ = cmd.MarkFlagRequired("payment")
 	_ = cmd.MarkFlagRequired("price")

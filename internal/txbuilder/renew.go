@@ -69,7 +69,9 @@ func BuildRenewTransferTx(
 	if ownerAddress != "" && ownerAddress != paymentAddress {
 		ownerAddr, err := serAddress.DecodeAddress(ownerAddress)
 		if err != nil {
-			return nil, NewInputValidationError("failed to decode owner address")
+			return nil, NewInputValidationError(
+				"failed to decode owner address",
+			)
 		}
 		ownerCredential = ownerAddr.PaymentPart
 	}
@@ -133,7 +135,9 @@ func BuildRenewTransferTx(
 	if price > 0 && duration > 0 {
 		selectionId, err = determinePlanSelection(refData, price, duration)
 		if err != nil {
-			return nil, NewInputValidationError("could not determine plan selection from provided price/duration")
+			return nil, NewInputValidationError(
+				"could not determine plan selection from provided price/duration",
+			)
 		}
 	}
 	// Get last known slot

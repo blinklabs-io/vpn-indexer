@@ -27,7 +27,9 @@ func decodeRefDatumFlexible(datumCBOR []byte) ([]plan, []string, error) {
 	//   [ ....,...]   OR   Constructor( [ plans, regions, ... ] )
 	seq, ok := toSlice(v)
 	if !ok {
-		return nil, nil, errors.New("refdatum: top-level is not a list/constructor")
+		return nil, nil, errors.New(
+			"refdatum: top-level is not a list/constructor",
+		)
 	}
 
 	// conisdered first list of (int,int) as plans and the first "list of string" as regions.

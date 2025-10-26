@@ -50,7 +50,9 @@ func BuildSignupTx(
 		return nil, nil, NewInputValidationError("empty region provided")
 	}
 	if paymentAddress == "" {
-		return nil, nil, NewInputValidationError("empty payment address provided")
+		return nil, nil, NewInputValidationError(
+			"empty payment address provided",
+		)
 	}
 	cfg := config.GetConfig()
 	cc, err := apolloBackend()
@@ -60,14 +62,18 @@ func BuildSignupTx(
 	// Decode payment address
 	paymentAddr, err := serAddress.DecodeAddress(paymentAddress)
 	if err != nil {
-		return nil, nil, NewInputValidationError("failed to decode payment address")
+		return nil, nil, NewInputValidationError(
+			"failed to decode payment address",
+		)
 	}
 	// Determine owner credential
 	ownerCredential := paymentAddr.PaymentPart
 	if ownerAddress != "" && ownerAddress != paymentAddress {
 		ownerAddr, err := serAddress.DecodeAddress(ownerAddress)
 		if err != nil {
-			return nil, nil, NewInputValidationError("failed to decode owner address")
+			return nil, nil, NewInputValidationError(
+				"failed to decode owner address",
+			)
 		}
 		ownerCredential = ownerAddr.PaymentPart
 	}
@@ -92,7 +98,9 @@ func BuildSignupTx(
 			return nil, nil, fmt.Errorf("reference data: %w", err)
 		}
 	default:
-		return nil, nil, errors.New("reference data not provided (missing deps.Ref and deps.DB)")
+		return nil, nil, errors.New(
+			"reference data not provided (missing deps.Ref and deps.DB)",
+		)
 	}
 	// Validate region
 	foundRegion := false
@@ -131,7 +139,9 @@ func BuildSignupTx(
 	// Determine plan selection ID from price/duration
 	selectionId, err := determinePlanSelection(refData, price, duration)
 	if err != nil {
-		return nil, nil, NewInputValidationError("could not determine plan selection from provided price/duration")
+		return nil, nil, NewInputValidationError(
+			"could not determine plan selection from provided price/duration",
+		)
 	}
 	// Get last known slot
 	curSlot, err := cc.LastBlockSlot()

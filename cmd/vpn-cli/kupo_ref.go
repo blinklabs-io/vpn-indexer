@@ -24,7 +24,9 @@ func getKupoClient() (*kugo.Client, error) {
 	return k, nil
 }
 
-func loadReferenceFromKugoClient(ctx context.Context) (database.Reference, error) {
+func loadReferenceFromKugoClient(
+	ctx context.Context,
+) (database.Reference, error) {
 	cfg := config.GetConfig()
 	if strings.TrimSpace(cfg.TxBuilder.KupoUrl) == "" {
 		return database.Reference{}, errors.New("kupo url not configured")
@@ -43,17 +45,26 @@ func loadReferenceFromKugoClient(ctx context.Context) (database.Reference, error
 		return refByKugoMatches(ctx, k, addr)
 	}
 
-	return database.Reference{}, errors.New("neither reference token nor script address configured")
+	return database.Reference{}, errors.New(
+		"neither reference token nor script address configured",
+	)
 }
 
-func refByKugoMatches(ctx context.Context, k *kugo.Client, pattern string) (database.Reference, error) {
+func refByKugoMatches(
+	ctx context.Context,
+	k *kugo.Client,
+	pattern string,
+) (database.Reference, error) {
 	// Query matches by pattern (address).
 	matches, err := k.Matches(ctx, kugo.Pattern(pattern))
 	if err != nil {
 		return database.Reference{}, fmt.Errorf("kupo matches: %w", err)
 	}
 	if len(matches) == 0 {
-		return database.Reference{}, fmt.Errorf("no matches for pattern %q", pattern)
+		return database.Reference{}, fmt.Errorf(
+			"no matches for pattern %q",
+			pattern,
+		)
 	}
 	match := matches[0]
 
@@ -69,14 +80,19 @@ func refByKugoMatches(ctx context.Context, k *kugo.Client, pattern string) (data
 	case strings.TrimSpace(getDatumHash(match)) != "":
 		hexStr, derr := k.Datum(ctx, parseHex(getDatumHash(match)))
 		if derr != nil {
-			return database.Reference{}, fmt.Errorf("fetch datum by hash: %w", derr)
+			return database.Reference{}, fmt.Errorf(
+				"fetch datum by hash: %w",
+				derr,
+			)
 		}
 		datumCBOR, err = hex.DecodeString(parseHex(hexStr))
 		if err != nil {
 			return database.Reference{}, fmt.Errorf("datum decode: %w", err)
 		}
 	default:
-		return database.Reference{}, errors.New("reference utxo has no datum (no bytes/hash)")
+		return database.Reference{}, errors.New(
+			"reference utxo has no datum (no bytes/hash)",
+		)
 	}
 
 	// Decode reference plans and regions from datumCBOR
