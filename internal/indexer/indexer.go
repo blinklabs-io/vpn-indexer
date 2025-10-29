@@ -244,7 +244,7 @@ func (i *Indexer) updateStatus(status input_chainsync.ChainSyncStatus) {
 func (i *Indexer) handleEvent(evt event.Event) error {
 	cfg := config.GetConfig()
 	switch evtData := evt.Payload.(type) {
-	case input_chainsync.TransactionEvent:
+	case event.TransactionEvent:
 		for _, txOutput := range evtData.Transaction.Produced() {
 			// Ignore outputs that aren't to our script address
 			if txOutput.Output.Address().String() != cfg.Indexer.ScriptAddress {
