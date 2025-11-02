@@ -164,3 +164,15 @@ func toInt(v any) (int, bool) {
 		return 0, false
 	}
 }
+
+// Convert string to bytes as well as bytes to string
+func toString(v any) (string, bool) {
+	switch x := v.(type) {
+	case string:
+		return x, true
+	case []byte:
+		return string(x), true
+	default:
+		return "", false
+	}
+}
