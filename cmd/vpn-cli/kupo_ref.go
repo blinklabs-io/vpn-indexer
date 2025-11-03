@@ -130,7 +130,7 @@ func findClientOnChain(ctx context.Context, clientIdHex string) (database.Client
 	// script address contains policy id & asset name
 	scriptAddrBytes, err := serAddress.DecodeAddress(cfg.Indexer.ScriptAddress)
 	if err != nil {
-		return database.Client{}, fmt.Errorf("Failed in decoding script address: %w", err)
+		return database.Client{}, fmt.Errorf("failed in decoding script address: %w", err)
 	}
 	policyHex := strings.ToLower(hex.EncodeToString(scriptAddrBytes.PaymentPart))
 	targetAsset := strings.ToLower(parseHex(clientIdHex))
