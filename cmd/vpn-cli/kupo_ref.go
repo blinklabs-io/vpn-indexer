@@ -120,7 +120,7 @@ func parseHex(s string) string {
 	return s
 }
 
-// findClientOnChain finds the client UTXO based on script address & fetches its datum & decodes it.
+// It finds the client UTXO based on script address & fetches its datum & decodes it.
 func findClientOnChain(ctx context.Context, clientIdHex string) (database.Client, error) {
 	cfg := config.GetConfig()
 	if strings.TrimSpace(cfg.Indexer.ScriptAddress) == "" {
