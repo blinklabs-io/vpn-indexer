@@ -188,9 +188,19 @@ func findClientOnChain(ctx context.Context, clientIdHex string) (database.Client
 	if !ok || len(fields) != 3 {
 		return database.Client{}, errors.New("unexpected client datum shape")
 	}
-	credential, _ := unwrapAll(fields[0]).([]byte)
-	region, _ := toString(unwrapAll(fields[1]))
-	expirationMs, _ := toInt(unwrapAll(fields[2]))
+	credentialRaw := unwrapAll(fields[0])
+	credential, ok := credentialRaw.([]byte)
+	if !ok || len(credential) == 0 {
+		return database.Client{}, errors.New("invalid credential in client datum")
+	}
+	region, ok := toString(unwrapAll(fields[1]))
+	if !ok || region == "" {
+		return database.Client{}, errors.New("invalid region in client datum")
+	}
+	expirationMs, ok := toInt(unwrapAll(fields[2]))
+	if !ok {
+		return database.Client{}, errors.New("invalid expiration in client datum")
+	}
 	if credential == nil || region == "" {
 		return database.Client{}, errors.New("invalid fields in client datum")
 	}
