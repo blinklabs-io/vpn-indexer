@@ -112,6 +112,11 @@ func BuildRenewTransferTx(
 	switch {
 	case deps.Ref != nil:
 		refData = *deps.Ref
+	case deps.DB != nil:
+		refData, err = deps.DB.ReferenceData()
+		if err != nil {
+			return nil, fmt.Errorf("reference data: %w", err)
+		}
 	default:
 		refData, err = deps.DB.ReferenceData()
 		if err != nil {
