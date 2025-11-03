@@ -44,10 +44,6 @@ func runTransfer(cmd *cobra.Command, _ []string) error {
 	if err := validateFormat(format); err != nil {
 		return err
 	}
-	// Normalize inputs
-	flagTransferPayment = strings.TrimSpace(flagTransferPayment)
-	flagTransferOwner = strings.TrimSpace(flagTransferOwner)
-	flagTransferClientID = strings.TrimSpace(flagTransferClientID)
 
 	if flagTransferPayment == "" {
 		return errors.New("--payment is required")
