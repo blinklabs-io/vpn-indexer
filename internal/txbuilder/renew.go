@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"time"
 
@@ -32,8 +33,14 @@ import (
 	"github.com/blinklabs-io/vpn-indexer/internal/database"
 )
 
+type RenewDeps struct {
+	DB     *database.Database
+	Ref    *database.Reference
+	Client *database.Client
+}
+
 func BuildRenewTransferTx(
-	db *database.Database,
+	deps RenewDeps,
 	paymentAddress string,
 	ownerAddress string,
 	clientId string,
@@ -54,9 +61,17 @@ func BuildRenewTransferTx(
 	if err != nil {
 		return nil, fmt.Errorf("decode client ID: %w", err)
 	}
-	client, err := db.ClientByAssetName(clientAssetName)
-	if err != nil {
-		return nil, fmt.Errorf("lookup client: %w", err)
+	var client database.Client
+	switch {
+	case deps.Client != nil:
+		client = *deps.Client
+	case deps.DB != nil:
+		client, err = deps.DB.ClientByAssetName(clientAssetName)
+		if err != nil {
+			return nil, fmt.Errorf("lookup client (db): %w", err)
+		}
+	default:
+		return nil, errors.New("renew: deps.Client not provided and no fallback (DB) available")
 	}
 	// Decode payment address
 	paymentAddr, err := serAddress.DecodeAddress(paymentAddress)
@@ -93,10 +108,22 @@ func BuildRenewTransferTx(
 	if err != nil {
 		return nil, fmt.Errorf("provider address: %w", err)
 	}
-	// Lookup reference data
-	refData, err := db.ReferenceData()
-	if err != nil {
-		return nil, fmt.Errorf("reference data: %w", err)
+
+	// Resolve reference data: prefer deps.Ref, fall back to DB
+	var refData database.Reference
+	switch {
+	case deps.Ref != nil:
+		refData = *deps.Ref
+	case deps.DB != nil:
+		refData, err = deps.DB.ReferenceData()
+		if err != nil {
+			return nil, fmt.Errorf("reference data: %w", err)
+		}
+	default:
+		refData, err = deps.DB.ReferenceData()
+		if err != nil {
+			return nil, fmt.Errorf("reference data: %w", err)
+		}
 	}
 	// Parse script ref
 	scriptRef, err := inputRefFromString(cfg.TxBuilder.ScriptRefInput)

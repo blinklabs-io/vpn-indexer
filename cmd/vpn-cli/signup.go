@@ -1,13 +1,10 @@
 package main
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
-	"github.com/blinklabs-io/vpn-indexer/internal/config"
 	"github.com/blinklabs-io/vpn-indexer/internal/txbuilder"
 	"github.com/spf13/cobra"
 )
@@ -71,11 +68,10 @@ func main() {
 }
 
 func runSignup(cmd *cobra.Command, _ []string) error {
-	switch strings.ToLower(format) {
-	case "hex", "cbor":
-	default:
-		return fmt.Errorf("invalid --format %q (must be hex|cbor)", format)
+	if err := validateFormat(format); err != nil {
+		return err
 	}
+
 	if flagPaymentAddr == "" {
 		return errors.New("--client is required")
 	}
@@ -89,28 +85,14 @@ func runSignup(cmd *cobra.Command, _ []string) error {
 		return errors.New("--region is required")
 	}
 
-	// Load global config (no file needed)
-	if _, err := config.Load(""); err != nil {
-		return fmt.Errorf("load config: %w", err)
+	cfg, err := initConfig(flagKupoURL, flagOgmiosURL)
+	if err != nil {
+		return err
 	}
-	cfg := config.GetConfig()
-	if flagKupoURL != "" {
-		cfg.TxBuilder.KupoUrl = flagKupoURL
+	if err := requireEndpoints(cfg); err != nil {
+		return err
 	}
-	if flagOgmiosURL != "" {
-		cfg.TxBuilder.OgmiosUrl = flagOgmiosURL
-		txbuilder.ResetCachedSystemStart()
-	}
-
-	if strings.TrimSpace(cfg.TxBuilder.KupoUrl) == "" {
-		return fmt.Errorf("kupo url is required (set --kupo-url)")
-	}
-	if strings.TrimSpace(cfg.TxBuilder.OgmiosUrl) == "" {
-		return fmt.Errorf("ogmios url is required (set --ogmios-url)")
-	}
-
-	// Load reference data from Kupo
-	ref, err := loadReferenceFromKugoClient(cmd.Context())
+	ref, err := loadRefData(cmd.Context())
 	if err != nil {
 		return fmt.Errorf("load reference (kupo): %w", err)
 	}
@@ -128,20 +110,5 @@ func runSignup(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	switch strings.ToLower(format) {
-	case "hex":
-		s := strings.ToUpper(hex.EncodeToString(cborBytes)) + "\n"
-		return writeOut(outPath, []byte(s))
-	case "cbor":
-		return writeOut(outPath, cborBytes)
-	}
-	return nil
-}
-
-func writeOut(path string, data []byte) error {
-	if path == "" {
-		_, err := os.Stdout.Write(data)
-		return err
-	}
-	return os.WriteFile(path, data, 0o644)
+	return writeOutHelper(format, outPath, cborBytes)
 }

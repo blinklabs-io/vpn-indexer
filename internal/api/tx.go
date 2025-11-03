@@ -144,7 +144,7 @@ func (a *Api) handleTxRenew(w http.ResponseWriter, r *http.Request) {
 	}
 
 	txCbor, err := txbuilder.BuildRenewTransferTx(
-		a.db,
+		txbuilder.RenewDeps{DB: a.db},
 		req.PaymentAddress,
 		req.OwnerAddress,
 		req.ClientId,
@@ -218,7 +218,7 @@ func (a *Api) handleTxTransfer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	txCbor, err := txbuilder.BuildRenewTransferTx(
-		a.db,
+		txbuilder.RenewDeps{DB: a.db},
 		req.PaymentAddress,
 		req.OwnerAddress,
 		req.ClientId,
