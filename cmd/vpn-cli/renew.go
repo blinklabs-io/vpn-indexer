@@ -34,8 +34,8 @@ func init() {
 	cmd.Flags().IntVar(&flagRenewDuration, "duration", 0, "plan duration in milliseconds")
 
 	// Load from on chain using Kupo/Ogmios
-	cmd.Flags().StringVar(&flagOgmiosURL, "ogmios-url", "", "Ogmios endpoint (optional)")
-	cmd.Flags().StringVar(&flagKupoURL, "kupo-url", "", "Kupo endpoint (used if --refdata not provided)")
+	cmd.Flags().StringVar(&flagRenewOgmiosURL, "ogmios-url", "", "Ogmios endpoint (optional)")
+	cmd.Flags().StringVar(&flagRenewKupoURL, "kupo-url", "", "Kupo endpoint (used if --refdata not provided)")
 
 	_ = cmd.MarkFlagRequired("payment")
 	_ = cmd.MarkFlagRequired("price")
@@ -62,7 +62,7 @@ func runRenew(cmd *cobra.Command, _ []string) error {
 		return errors.New("--client-id is required")
 	}
 
-	cfg, err := initConfig(flagKupoURL, flagOgmiosURL)
+	cfg, err := initConfig(flagRenewKupoURL, flagRenewOgmiosURL)
 	if err != nil {
 		return err
 	}
