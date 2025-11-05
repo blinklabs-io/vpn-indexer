@@ -128,6 +128,11 @@ func chooseInputUtxos(
 			return nil, errors.New("not enough funds")
 		}
 		utxo := availableUtxos[0]
+		// Discard inputs with assets for simplicity
+		if utxo.Output.GetValue().HasAssets {
+			availableUtxos = availableUtxos[1:]
+			continue
+		}
 		ret = append(ret, utxo)
 		selectedAmount = selectedAmount.Add(utxo.Output.GetValue())
 		availableUtxos = availableUtxos[1:]
