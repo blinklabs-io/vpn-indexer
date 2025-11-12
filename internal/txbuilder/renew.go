@@ -236,7 +236,6 @@ func BuildRenewTransferTx(
 				2,
 				cbor.IndefLengthList{
 					newOwnerCred,
-					clientAssetName,
 					selectionId,
 				},
 			),
