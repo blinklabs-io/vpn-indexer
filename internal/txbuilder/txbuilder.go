@@ -16,11 +16,9 @@ package txbuilder
 
 import (
 	"context"
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"slices"
 	"time"
 
 	"github.com/Salvionied/apollo/serialization/Amount"
@@ -30,6 +28,7 @@ import (
 	"github.com/Salvionied/apollo/txBuilding/Backend/OgmiosChainContext"
 	"github.com/SundaeSwap-finance/kugo"
 	"github.com/SundaeSwap-finance/ogmigo/v6"
+	"github.com/blinklabs-io/gouroboros/cbor"
 	lcommon "github.com/blinklabs-io/gouroboros/ledger/common"
 	"github.com/blinklabs-io/gouroboros/ledger/shelley"
 	"github.com/blinklabs-io/vpn-indexer/internal/config"
@@ -140,19 +139,20 @@ func chooseInputUtxos(
 	return ret, nil
 }
 
-func clientIdFromInput(input TransactionInput.TransactionInput) []byte {
-	indexData := make([]byte, 2)
-	binary.LittleEndian.PutUint16(indexData, uint16(input.Index))
-	// Iterate from the end and remove any zero bytes
-	for i := len(indexData) - 1; i >= 0; i-- {
-		if indexData[i] == 0 {
-			indexData = slices.Delete(indexData, i, i+1)
-		}
+func clientIdFromInput(input TransactionInput.TransactionInput) ([]byte, error) {
+	tmpData := cbor.NewConstructor(
+		0,
+		cbor.IndefLengthList{
+			input.TransactionId,
+			input.Index,
+		},
+	)
+	hashData, err := cbor.Encode(tmpData)
+	if err != nil {
+		return nil, err
 	}
-	hashData := input.TransactionId
-	hashData = slices.Concat(hashData, indexData)
 	hash := lcommon.Blake2b256Hash(hashData)
-	return hash.Bytes()
+	return hash.Bytes(), nil
 }
 
 func determinePlanSelection(

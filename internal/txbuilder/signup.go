@@ -135,7 +135,10 @@ func BuildSignupTx(
 		return nil, nil, NewInputValidationError("no input UTxOs found")
 	}
 	// Determine client ID from first selected input UTxO
-	clientId := clientIdFromInput(inputUtxos[0].Input)
+	clientId, err := clientIdFromInput(inputUtxos[0].Input)
+	if err != nil {
+		return nil, nil, fmt.Errorf("client ID from input: %w", err)
+	}
 	// Determine plan selection ID from price/duration
 	selectionId, err := determinePlanSelection(refData, price, duration)
 	if err != nil {
