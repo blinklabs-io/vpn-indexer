@@ -230,7 +230,7 @@ func BuildSignupTx(
 		// Set transaction not valid before current slot
 		SetValidityStart(int64(curSlot)).
 		// Set TTL
-		SetTtl(int64(curSlot+transactionTtlSlots)).
+		SetTtl(int64(curSlot)+int64(cfg.TxBuilder.TTLOffset)).
 		// Send service payment to provider address
 		PayToAddress(
 			providerAddress, price,

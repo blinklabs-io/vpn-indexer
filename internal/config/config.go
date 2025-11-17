@@ -108,6 +108,7 @@ type TxBuilderConfig struct {
 	SubmitUrl       string `yaml:"submitUrl"       envconfig:"TXBUILDER_SUBMIT_URL"`
 	ProviderAddress string `yaml:"providerAddress" envconfig:"TXBUILDER_PROVIDER_ADDRESS"`
 	ScriptRefInput  string `yaml:"scriptRefInput"  envconfig:"TXBUILDER_SCRIPT_REF_INPUT"`
+	TTLOffset       uint64 `yaml:"ttlOffset"       envconfig:"TXBUILDER_TTL_OFFSET"`
 }
 
 // Singleton config instance with default values
@@ -151,6 +152,7 @@ var globalConfig = &Config{
 		// NOTE: this shares a stake key with the indexer script address
 		ProviderAddress: "addr_test1qpjwevqy6mh5hsnudjgpgrtfjwwxdtl7d73e9u0kxg9453jjduk3c6ecrpkrk8qqlr4ep37cx03ytlcn70n93zyemj6sasxnj5",
 		ScriptRefInput:  "ea7e4f0147eeba9a17c519e1652ed933262d30fe462bf418ece18dc27a2c13ba#1",
+		TTLOffset:       500,
 	},
 }
 
