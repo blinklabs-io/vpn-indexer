@@ -12,7 +12,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.31.19
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.90.0
 	github.com/blinklabs-io/adder v0.33.0
-	github.com/blinklabs-io/gouroboros v0.138.0
+	github.com/blinklabs-io/gouroboros v0.139.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.23.2
@@ -96,7 +96,7 @@ require (
 	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/swaggo/files v1.0.1 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
-	github.com/utxorpc/go-codegen v0.17.0 // indirect
+	github.com/utxorpc/go-codegen v0.18.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
@@ -110,7 +110,7 @@ require (
 	golang.org/x/text v0.30.0 // indirect
 	golang.org/x/time v0.9.0 // indirect
 	golang.org/x/tools v0.37.0 // indirect
-	google.golang.org/protobuf v1.36.9 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
