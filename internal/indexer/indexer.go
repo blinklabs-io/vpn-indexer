@@ -336,7 +336,7 @@ func (i *Indexer) handleEventClient(txOutput lcommon.Utxo) error {
 		string(clientDatum.Region),
 		i.cfg.Vpn.Domain,
 	)
-	clientId, err := tmpClient.Generate(vpnHost, i.cfg.Vpn.Port)
+	clientId, err := tmpClient.Generate(vpnHost, i.cfg.Vpn.Port, i.cfg.Vpn.DNS)
 	if err != nil {
 		return err
 	}

@@ -86,6 +86,7 @@ type VpnConfig struct {
 	Domain string `yaml:"domain" envconfig:"VPN_DOMAIN"`
 	Region string `yaml:"region" envconfig:"VPN_REGION"`
 	Port   int    `yaml:"port"   envconfig:"VPN_PORT"`
+	DNS    string `yaml:"dns"    envconfig:"VPN_DNS"`
 }
 
 type CrlConfig struct {
