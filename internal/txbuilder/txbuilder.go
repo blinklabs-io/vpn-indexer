@@ -49,7 +49,7 @@ func apolloBackend() (*OgmiosChainContext.OgmiosChainContext, error) {
 		kugo.WithTimeout(defaultKupoTimeout),
 		kugo.WithLogger(ogmigo.NopLogger),
 	)
-	occ := OgmiosChainContext.NewOgmiosChainContext(*ogmiosClient, *kupoClient)
+	occ := OgmiosChainContext.NewOgmiosChainContext(ogmiosClient, kupoClient)
 	return &occ, nil
 }
 
