@@ -45,7 +45,7 @@ block-ipv6
 
 # Encryption and TLS
 cipher AES-256-GCM
-tls-cipher TLS-CHACHA20-POLY1305-SHA256:TLS-AES-256-GCM-SHA384
+tls-ciphersuites TLS-CHACHA20-POLY1305-SHA256:TLS-AES-256-GCM-SHA384
 tls-version-min 1.3
 auth SHA256
 remote-cert-tls server
