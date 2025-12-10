@@ -71,7 +71,9 @@ func BuildRenewTransferTx(
 			return nil, fmt.Errorf("lookup client (db): %w", err)
 		}
 	default:
-		return nil, errors.New("renew: deps.Client not provided and no fallback (DB) available")
+		return nil, errors.New(
+			"renew: deps.Client not provided and no fallback (DB) available",
+		)
 	}
 	// Decode payment address
 	paymentAddr, err := serAddress.DecodeAddress(paymentAddress)

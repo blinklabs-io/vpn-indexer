@@ -25,13 +25,18 @@ func init() {
 		RunE:  runTransfer,
 	}
 
-	cmd.Flags().StringVar(&flagTransferPayment, "payment", "", "client payment bech32 address (required)")
-	cmd.Flags().StringVar(&flagTransferOwner, "owner", "", "owner bech32 address (required)")
-	cmd.Flags().StringVar(&flagTransferClientID, "client-id", "", "existing client ID (required)")
+	cmd.Flags().
+		StringVar(&flagTransferPayment, "payment", "", "client payment bech32 address (required)")
+	cmd.Flags().
+		StringVar(&flagTransferOwner, "owner", "", "owner bech32 address (required)")
+	cmd.Flags().
+		StringVar(&flagTransferClientID, "client-id", "", "existing client ID (required)")
 
 	// Load from on chain using Kupo/Ogmios
-	cmd.Flags().StringVar(&flagTransferOgmiosURL, "ogmios-url", "", "Ogmios endpoint (optional)")
-	cmd.Flags().StringVar(&flagTransferKupoURL, "kupo-url", "", "Kupo endpoint (used if --refdata not provided)")
+	cmd.Flags().
+		StringVar(&flagTransferOgmiosURL, "ogmios-url", "", "Ogmios endpoint (optional)")
+	cmd.Flags().
+		StringVar(&flagTransferKupoURL, "kupo-url", "", "Kupo endpoint (used if --refdata not provided)")
 
 	_ = cmd.MarkFlagRequired("payment")
 	_ = cmd.MarkFlagRequired("owner")

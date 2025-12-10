@@ -137,7 +137,10 @@ func parseHex(s string) string {
 }
 
 // It finds the client UTXO based on script address & fetches its datum & decodes it.
-func findClientOnChain(ctx context.Context, clientIdHex string) (database.Client, error) {
+func findClientOnChain(
+	ctx context.Context,
+	clientIdHex string,
+) (database.Client, error) {
 	cfg := config.GetConfig()
 	if strings.TrimSpace(cfg.Indexer.ScriptAddress) == "" {
 		return database.Client{}, errors.New("script address not configured")
@@ -146,9 +149,14 @@ func findClientOnChain(ctx context.Context, clientIdHex string) (database.Client
 	// script address contains policy id & asset name
 	scriptAddrBytes, err := serAddress.DecodeAddress(cfg.Indexer.ScriptAddress)
 	if err != nil {
-		return database.Client{}, fmt.Errorf("failed in decoding script address: %w", err)
+		return database.Client{}, fmt.Errorf(
+			"failed in decoding script address: %w",
+			err,
+		)
 	}
-	policyHex := strings.ToLower(hex.EncodeToString(scriptAddrBytes.PaymentPart))
+	policyHex := strings.ToLower(
+		hex.EncodeToString(scriptAddrBytes.PaymentPart),
+	)
 	targetAsset := strings.ToLower(parseHex(clientIdHex))
 
 	k, err := getKupoClient()
@@ -160,18 +168,27 @@ func findClientOnChain(ctx context.Context, clientIdHex string) (database.Client
 	assetPattern := fmt.Sprintf("%s.%s", policyHex, targetAsset)
 	matches, err := k.Matches(ctx, kugo.Pattern(assetPattern))
 	if err != nil {
-		return database.Client{}, fmt.Errorf("kupo matches(script address): %w", err)
+		return database.Client{}, fmt.Errorf(
+			"kupo matches(script address): %w",
+			err,
+		)
 	}
 
 	if len(matches) == 0 {
-		return database.Client{}, fmt.Errorf("client not found for clientId=%s", clientIdHex)
+		return database.Client{}, fmt.Errorf(
+			"client not found for clientId=%s",
+			clientIdHex,
+		)
 	}
 
 	// From all UTXOs, pick the one at script address
 	var picked *kugo.Match
 	for i := range matches {
 		m := matches[i]
-		if strings.EqualFold(strings.TrimSpace(m.Address), strings.TrimSpace(cfg.Indexer.ScriptAddress)) {
+		if strings.EqualFold(
+			strings.TrimSpace(m.Address),
+			strings.TrimSpace(cfg.Indexer.ScriptAddress),
+		) {
 			picked = &m
 			break
 		}
@@ -207,7 +224,9 @@ func findClientOnChain(ctx context.Context, clientIdHex string) (database.Client
 	credentialRaw := unwrapAll(fields[0])
 	credential, ok := credentialRaw.([]byte)
 	if !ok || len(credential) == 0 {
-		return database.Client{}, errors.New("invalid credential in client datum")
+		return database.Client{}, errors.New(
+			"invalid credential in client datum",
+		)
 	}
 	region, ok := toString(unwrapAll(fields[1]))
 	if !ok || region == "" {
@@ -215,7 +234,9 @@ func findClientOnChain(ctx context.Context, clientIdHex string) (database.Client
 	}
 	expirationMs, ok := toInt(unwrapAll(fields[2]))
 	if !ok {
-		return database.Client{}, errors.New("invalid expiration in client datum")
+		return database.Client{}, errors.New(
+			"invalid expiration in client datum",
+		)
 	}
 	if credential == nil || region == "" {
 		return database.Client{}, errors.New("invalid fields in client datum")
