@@ -27,15 +27,20 @@ func init() {
 		RunE:  runRenew,
 	}
 
-	cmd.Flags().StringVar(&flagRenewPayment, "payment", "", "client payment bech32 address (required)")
+	cmd.Flags().
+		StringVar(&flagRenewPayment, "payment", "", "client payment bech32 address (required)")
 	cmd.Flags().StringVar(&flagRenewOwner, "owner", "", "owner bech32 address")
-	cmd.Flags().StringVar(&flagRenewClientID, "client-id", "", "existing client ID (required)")
+	cmd.Flags().
+		StringVar(&flagRenewClientID, "client-id", "", "existing client ID (required)")
 	cmd.Flags().IntVar(&flagRenewPrice, "price", 0, "plan price in lovelace")
-	cmd.Flags().IntVar(&flagRenewDuration, "duration", 0, "plan duration in milliseconds")
+	cmd.Flags().
+		IntVar(&flagRenewDuration, "duration", 0, "plan duration in milliseconds")
 
 	// Load from on chain using Kupo/Ogmios
-	cmd.Flags().StringVar(&flagRenewOgmiosURL, "ogmios-url", "", "Ogmios endpoint (optional)")
-	cmd.Flags().StringVar(&flagRenewKupoURL, "kupo-url", "", "Kupo endpoint (used if --refdata not provided)")
+	cmd.Flags().
+		StringVar(&flagRenewOgmiosURL, "ogmios-url", "", "Ogmios endpoint (optional)")
+	cmd.Flags().
+		StringVar(&flagRenewKupoURL, "kupo-url", "", "Kupo endpoint (used if --refdata not provided)")
 
 	_ = cmd.MarkFlagRequired("payment")
 	_ = cmd.MarkFlagRequired("price")
