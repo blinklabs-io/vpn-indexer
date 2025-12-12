@@ -68,20 +68,22 @@ jobs:
       - name: Upload release asset
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          _filename=vpn-indexer-${{ env.RELEASE_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
-          if [[ ${{ matrix.os }} == windows ]]; then
-            _filename=${_filename}.exe
-          fi
-          cp vpn-indexer ${_filename}
-          curl \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/octet-stream" \
-            --data-binary @${_filename} \
-            https://uploads.github.com/repos/${{ github.repository_owner }}/vpn-indexer/releases/${{ needs.create-draft-release.outputs.RELEASE_ID }}/assets?name=${_filename}
+          for binary in vpn-indexer vpn-cli; do
+            _filename=${binary}-${{ env.RELEASE_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
+            if [[ ${{ matrix.os }} == windows ]]; then
+              _filename=${_filename}.exe
+            fi
+            cp ${binary} ${_filename}
+            curl \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary @${_filename} \
+              https://uploads.github.com/repos/${{ github.repository_owner }}/vpn-indexer/releases/${{ needs.create-draft-release.outputs.RELEASE_ID }}/assets?name=${_filename}
+          done
       - name: Attest binary
         uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0 https://github.com/actions/attest-build-provenance/releases/tag/v3.0.0
         with:
-          subject-path: 'vpn-indexer'
+          subject-path: "vpn-*"
 
   build-images:
     needs: [create-draft-release]
