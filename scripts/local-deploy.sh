@@ -48,17 +48,18 @@ provisioning:
       policies: [readwrite]
 defaultBuckets: test-bucket
 EOF
-(
-set -x
-helm uninstall --wait -n ${_namespace} minio || true
-helm install \
-	--create-namespace \
-	--wait \
-	-n ${_namespace} \
-	minio \
-	oci://registry-1.docker.io/bitnamicharts/minio \
-	--values ${_tmpdir}/minio-values.yaml
-)
+# TODO: replace minio helm chart and image with something not Bitnami
+#(
+#set -x
+#helm uninstall --wait -n ${_namespace} minio || true
+#helm install \
+#	--create-namespace \
+#	--wait \
+#	-n ${_namespace} \
+#	minio \
+#	oci://registry-1.docker.io/bitnamicharts/minio \
+#	--values ${_tmpdir}/minio-values.yaml
+#)
 
 # Import image into k3d cluster
 (
