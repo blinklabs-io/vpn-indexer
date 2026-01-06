@@ -63,7 +63,6 @@ keepalive 10 120
 
 # DNS and routing (mirroring server pushes for redundancy)
 dhcp-option DNS %s
-block-outside-dns
 redirect-gateway def1
 
 <cert>
