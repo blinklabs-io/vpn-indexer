@@ -83,14 +83,10 @@ func (c *Crl) k8sClient() (*kubernetes.Clientset, error) {
 }
 
 func (c *Crl) scheduleUpdateConfigMap() {
-	tickChan := time.Tick(1 * time.Minute)
+	ticker := time.NewTicker(1 * time.Minute)
 	c.nextScheduledUpdate = time.Now().Add(c.config.Crl.UpdateInterval)
 	go func() {
-		for {
-			_, ok := <-tickChan
-			if !ok {
-				return
-			}
+		for range ticker.C {
 			c.needsUpdateMutex.Lock()
 			if time.Now().After(c.nextScheduledUpdate) || c.needsUpdate {
 				if err := c.updateConfigMap(); err != nil {
