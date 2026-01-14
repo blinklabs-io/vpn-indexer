@@ -39,17 +39,16 @@ remote %s %d
 nobind
 persist-tun
 persist-remote-ip
-ifconfig-ipv6 fd15:53b6:dead:2::2/64 fd15:53b6:dead:2::1
-redirect-gateway ipv6
-block-ipv6
 
 # Encryption and TLS
 cipher AES-256-GCM
-tls-ciphersuites TLS-CHACHA20-POLY1305-SHA256:TLS-AES-256-GCM-SHA384
 tls-version-min 1.3
 auth SHA256
 remote-cert-tls server
-tls-cert-profile preferred
+auth-nocache
+
+# Security hardening
+pull-filter ignore "auth-user-pass"
 
 # Disable compression for privacy
 comp-lzo no
@@ -58,10 +57,7 @@ comp-lzo no
 verb 0
 mute 10
 
-# Connection stability
-keepalive 10 120
-
-# DNS and routing (mirroring server pushes for redundancy)
+# DNS and routing
 dhcp-option DNS %s
 redirect-gateway def1
 
