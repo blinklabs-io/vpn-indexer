@@ -28,6 +28,13 @@ definitions:
       signature:
         type: string
     type: object
+  api.ErrorResponse:
+    properties:
+      error:
+        type: string
+      reason:
+        type: string
+    type: object
   api.RefDataResponse:
     properties:
       prices:
@@ -97,6 +104,84 @@ definitions:
     properties:
       txCbor:
         type: string
+    type: object
+  api.WGDeleteRequest:
+    properties:
+      client_id:
+        type: string
+      key:
+        type: string
+      signature:
+        type: string
+      wg_pubkey:
+        type: string
+    type: object
+  api.WGDeleteResponse:
+    properties:
+      remaining_devices:
+        type: integer
+      success:
+        type: boolean
+    type: object
+  api.WGDeviceInfo:
+    properties:
+      assigned_ip:
+        type: string
+      created_at:
+        type: integer
+      pubkey:
+        type: string
+    type: object
+  api.WGDevicesRequest:
+    properties:
+      client_id:
+        type: string
+      key:
+        type: string
+      signature:
+        type: string
+    type: object
+  api.WGDevicesResponse:
+    properties:
+      devices:
+        items:
+          $ref: '#/definitions/api.WGDeviceInfo'
+        type: array
+      limit:
+        type: integer
+    type: object
+  api.WGProfileRequest:
+    properties:
+      client_id:
+        type: string
+      key:
+        type: string
+      signature:
+        type: string
+      wg_pubkey:
+        type: string
+    type: object
+  api.WGRegisterRequest:
+    properties:
+      client_id:
+        type: string
+      key:
+        type: string
+      signature:
+        type: string
+      wg_pubkey:
+        type: string
+    type: object
+  api.WGRegisterResponse:
+    properties:
+      assigned_ip:
+        type: string
+      device_count:
+        type: integer
+      device_limit:
+        type: integer
+      success:
+        type: boolean
     type: object
 info:
   contact:
@@ -204,6 +289,172 @@ paths:
           schema:
             type: string
       summary: ClientProfile
+  /api/client/wg-devices:
+    post:
+      consumes:
+      - application/json
+      description: List all WireGuard devices registered for a client
+      parameters:
+      - description: Devices Request
+        in: body
+        name: WGDevicesRequest
+        required: true
+        schema:
+          $ref: '#/definitions/api.WGDevicesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Device list
+          schema:
+            $ref: '#/definitions/api.WGDevicesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "405":
+          description: Method Not Allowed
+          schema:
+            type: string
+        "500":
+          description: Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: WGDevices
+  /api/client/wg-peer:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a WireGuard device registration
+      parameters:
+      - description: Delete Request
+        in: body
+        name: WGDeleteRequest
+        required: true
+        schema:
+          $ref: '#/definitions/api.WGDeleteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deletion successful
+          schema:
+            $ref: '#/definitions/api.WGDeleteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "405":
+          description: Method Not Allowed
+          schema:
+            type: string
+        "500":
+          description: Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: WGPeerDelete
+  /api/client/wg-profile:
+    post:
+      consumes:
+      - application/json
+      description: Get a WireGuard configuration profile for a registered device
+      parameters:
+      - description: Profile Request
+        in: body
+        name: WGProfileRequest
+        required: true
+        schema:
+          $ref: '#/definitions/api.WGProfileRequest'
+      produces:
+      - text/plain
+      - application/json
+      responses:
+        "200":
+          description: WireGuard config file
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "403":
+          description: Forbidden (subscription expired)
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "405":
+          description: Method Not Allowed
+          schema:
+            type: string
+        "500":
+          description: Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: WGProfile
+  /api/client/wg-register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new WireGuard device for a client
+      parameters:
+      - description: Register Request
+        in: body
+        name: WGRegisterRequest
+        required: true
+        schema:
+          $ref: '#/definitions/api.WGRegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Registration successful
+          schema:
+            $ref: '#/definitions/api.WGRegisterResponse'
+        "400":
+          description: Bad Request (includes generic error for duplicate pubkey to
+            prevent enumeration)
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "403":
+          description: Forbidden (device limit reached or subscription expired)
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "405":
+          description: Method Not Allowed
+          schema:
+            type: string
+        "500":
+          description: Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: WGRegister
   /api/refdata:
     get:
       consumes:
