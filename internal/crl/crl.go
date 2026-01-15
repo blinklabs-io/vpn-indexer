@@ -42,6 +42,8 @@ type Crl struct {
 	nextScheduledUpdate time.Time
 	needsUpdate         bool
 	needsUpdateMutex    sync.Mutex
+	doneChan            chan struct{}
+	stopOnce            sync.Once
 }
 
 func New(
@@ -51,10 +53,11 @@ func New(
 	ca *ca.Ca,
 ) (*Crl, error) {
 	crl := &Crl{
-		ca:     ca,
-		config: cfg,
-		db:     db,
-		logger: logger,
+		ca:       ca,
+		config:   cfg,
+		db:       db,
+		logger:   logger,
+		doneChan: make(chan struct{}),
 	}
 	if err := crl.updateConfigMap(); err != nil {
 		return nil, fmt.Errorf("update CRL ConfigMap: %w", err)
@@ -68,6 +71,12 @@ func (c *Crl) SetNeedsUpdate() {
 	c.needsUpdateMutex.Lock()
 	c.needsUpdate = true
 	c.needsUpdateMutex.Unlock()
+}
+
+func (c *Crl) Stop() {
+	c.stopOnce.Do(func() {
+		close(c.doneChan)
+	})
 }
 
 func (c *Crl) k8sClient() (*kubernetes.Clientset, error) {
@@ -86,25 +95,48 @@ func (c *Crl) scheduleUpdateConfigMap() {
 	ticker := time.NewTicker(1 * time.Minute)
 	c.nextScheduledUpdate = time.Now().Add(c.config.Crl.UpdateInterval)
 	go func() {
-		for range ticker.C {
-			c.needsUpdateMutex.Lock()
-			if time.Now().After(c.nextScheduledUpdate) || c.needsUpdate {
-				if err := c.updateConfigMap(); err != nil {
-					c.logger.Error(
-						fmt.Sprintf(
-							"failed to update CRL ConfigMap: %s",
-							err,
-						),
-					)
-				}
-				if !c.needsUpdate {
-					c.nextScheduledUpdate = c.nextScheduledUpdate.Add(
-						c.config.Crl.UpdateInterval,
-					)
-				}
+		defer ticker.Stop()
+		for {
+			select {
+			case <-c.doneChan:
+				return
+			case <-ticker.C:
+				// Read and clear state under lock. Clearing needsUpdate
+				// here ensures that concurrent SetNeedsUpdate() calls
+				// during updateConfigMap() are not lost.
+				c.needsUpdateMutex.Lock()
+				needUpdate := c.needsUpdate
 				c.needsUpdate = false
+				due := time.Now().After(c.nextScheduledUpdate)
+				c.needsUpdateMutex.Unlock()
+
+				if due || needUpdate {
+					err := c.updateConfigMap()
+
+					// Re-acquire lock to update state
+					c.needsUpdateMutex.Lock()
+					if err != nil {
+						c.logger.Error(
+							fmt.Sprintf(
+								"failed to update CRL ConfigMap: %s",
+								err,
+							),
+						)
+						// Set needsUpdate true so retry happens next tick
+						c.needsUpdate = true
+					} else {
+						// Only advance schedule if this was a scheduled update
+						if !needUpdate {
+							c.nextScheduledUpdate = c.nextScheduledUpdate.Add(
+								c.config.Crl.UpdateInterval,
+							)
+						}
+						// Don't clear needsUpdate here - it was cleared above
+						// and may have been set again by a concurrent call
+					}
+					c.needsUpdateMutex.Unlock()
+				}
 			}
-			c.needsUpdateMutex.Unlock()
 		}
 	}()
 }
