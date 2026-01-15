@@ -122,10 +122,9 @@ func BuildRenewTransferTx(
 			return nil, fmt.Errorf("reference data: %w", err)
 		}
 	default:
-		refData, err = deps.DB.ReferenceData()
-		if err != nil {
-			return nil, fmt.Errorf("reference data: %w", err)
-		}
+		return nil, errors.New(
+			"renew: deps.Ref not provided and no fallback (DB) available",
+		)
 	}
 	// Parse script ref
 	scriptRef, err := inputRefFromString(cfg.TxBuilder.ScriptRefInput)
