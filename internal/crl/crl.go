@@ -25,8 +25,10 @@ import (
 	"time"
 
 	"github.com/blinklabs-io/vpn-indexer/internal/ca"
+	"github.com/blinklabs-io/vpn-indexer/internal/client"
 	"github.com/blinklabs-io/vpn-indexer/internal/config"
 	"github.com/blinklabs-io/vpn-indexer/internal/database"
+	"github.com/blinklabs-io/vpn-indexer/internal/wireguard"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,6 +46,9 @@ type Crl struct {
 	needsUpdateMutex    sync.Mutex
 	doneChan            chan struct{}
 	stopOnce            sync.Once
+	wgClient            *wireguard.Client
+	s3Client            *client.Client
+	clientMu            sync.RWMutex // Guards wgClient and s3Client
 }
 
 func New(
@@ -77,6 +82,144 @@ func (c *Crl) Stop() {
 	c.stopOnce.Do(func() {
 		close(c.doneChan)
 	})
+}
+
+// SetWGClient sets the WireGuard client for peer cleanup
+func (c *Crl) SetWGClient(wgClient *wireguard.Client) {
+	c.clientMu.Lock()
+	defer c.clientMu.Unlock()
+	c.wgClient = wgClient
+}
+
+// SetS3Client sets the S3 client for peer cleanup
+func (c *Crl) SetS3Client(s3Client *client.Client) {
+	c.clientMu.Lock()
+	defer c.clientMu.Unlock()
+	c.s3Client = s3Client
+}
+
+// cleanupExpiredWGPeers removes WireGuard peers for expired subscriptions.
+// Checks doneChan between each peer to support graceful shutdown.
+func (c *Crl) cleanupExpiredWGPeers() error {
+	// Skip if not wireguard protocol
+	if c.config.Vpn.Protocol != "wireguard" {
+		return nil
+	}
+
+	// Copy clients under lock to avoid data races
+	c.clientMu.RLock()
+	s3Client := c.s3Client
+	wgClient := c.wgClient
+	c.clientMu.RUnlock()
+
+	// Get expired peers from DB
+	expiredPeers, err := c.db.GetExpiredWGPeers()
+	if err != nil {
+		return fmt.Errorf("failed to get expired WG peers: %w", err)
+	}
+
+	if len(expiredPeers) == 0 {
+		return nil
+	}
+
+	c.logger.Info(
+		fmt.Sprintf(
+			"cleaning up %d expired WireGuard peers",
+			len(expiredPeers),
+		),
+	)
+
+	for _, peer := range expiredPeers {
+		// Check for shutdown signal between each peer
+		select {
+		case <-c.doneChan:
+			c.logger.Info("cleanup interrupted by shutdown signal")
+			return nil
+		default:
+		}
+		// Log peer identifier safely (handle short pubkeys)
+		pubkeyPrefix := peer.Pubkey
+		if len(pubkeyPrefix) > 8 {
+			pubkeyPrefix = pubkeyPrefix[:8]
+		}
+
+		// Skip cleanup if S3 client is not set (S3 is source of truth)
+		if s3Client == nil {
+			c.logger.Warn(
+				fmt.Sprintf(
+					"skipping cleanup for peer %s: S3 client not configured",
+					pubkeyPrefix,
+				),
+			)
+			continue
+		}
+
+		// 1. Remove from S3 first (source of truth)
+		// If this fails, skip this peer and retry next cycle
+		if err := s3Client.RemovePeerFromS3(
+			peer.AssetName,
+			peer.Pubkey,
+		); err != nil {
+			c.logger.Warn(
+				fmt.Sprintf(
+					"failed to remove peer %s from S3: %s",
+					pubkeyPrefix,
+					err,
+				),
+			)
+			continue
+		}
+
+		// 2. Remove from DB (cache)
+		if err := c.db.DeleteWGPeer(peer.Pubkey); err != nil {
+			c.logger.Warn(
+				fmt.Sprintf(
+					"failed to remove peer %s from DB: %s",
+					pubkeyPrefix,
+					err,
+				),
+			)
+			// Continue to WG cleanup anyway - S3 is already updated
+		}
+
+		// 3. Release IP back to pool for reuse
+		if err := c.db.DeallocateIP(
+			c.config.Vpn.Region,
+			peer.AssignedIP,
+		); err != nil {
+			c.logger.Warn(
+				fmt.Sprintf(
+					"failed to deallocate IP %s: %s",
+					peer.AssignedIP,
+					err,
+				),
+			)
+			// Continue anyway - IP will be reclaimed on next pool wrap-around
+		}
+
+		// 4. Remove from WG container (best effort)
+		if wgClient != nil {
+			if err := wgClient.RemovePeer(
+				peer.Pubkey,
+				peer.AssignedIP,
+			); err != nil {
+				c.logger.Warn(
+					fmt.Sprintf(
+						"failed to remove peer %s from WG container: %s",
+						pubkeyPrefix,
+						err,
+					),
+				)
+				// Continue anyway - container will eventually sync
+			}
+		}
+
+		c.logger.Info(
+			fmt.Sprintf("removed expired WG peer %s", pubkeyPrefix),
+		)
+	}
+
+	return nil
 }
 
 func (c *Crl) k8sClient() (*kubernetes.Clientset, error) {
@@ -135,6 +278,16 @@ func (c *Crl) scheduleUpdateConfigMap() {
 						// and may have been set again by a concurrent call
 					}
 					c.needsUpdateMutex.Unlock()
+
+					// Cleanup expired WireGuard peers
+					if err := c.cleanupExpiredWGPeers(); err != nil {
+						c.logger.Error(
+							fmt.Sprintf(
+								"failed to cleanup expired WG peers: %s",
+								err,
+							),
+						)
+					}
 				}
 			}
 		}

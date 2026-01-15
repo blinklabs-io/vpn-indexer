@@ -16,6 +16,7 @@ package api
 
 import (
 	"crypto/ed25519"
+	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -287,7 +288,7 @@ func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 			vkey.(ed25519.PublicKey),
 		),
 	)
-	if string(vkeyHash.Bytes()) != string(tmpClient.Credential) {
+	if subtle.ConstantTimeCompare(vkeyHash.Bytes(), tmpClient.Credential) != 1 {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write(
 			[]byte(

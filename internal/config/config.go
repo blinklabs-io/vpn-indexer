@@ -16,7 +16,9 @@ package config
 
 import (
 	"fmt"
+	"net"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
@@ -83,10 +85,18 @@ type S3Config struct {
 }
 
 type VpnConfig struct {
-	Domain string `yaml:"domain" envconfig:"VPN_DOMAIN"`
-	Region string `yaml:"region" envconfig:"VPN_REGION"`
-	Port   int    `yaml:"port"   envconfig:"VPN_PORT"`
-	DNS    string `yaml:"dns"    envconfig:"VPN_DNS"`
+	Domain string `yaml:"domain"         envconfig:"VPN_DOMAIN"`
+	Region string `yaml:"region"         envconfig:"VPN_REGION"`
+	Port   int    `yaml:"port"           envconfig:"VPN_PORT"`
+	DNS    string `yaml:"dns"            envconfig:"VPN_DNS"`
+	// WireGuard configuration (disabled by default, set Protocol to "wireguard" to enable)
+	Protocol       string `yaml:"protocol"       envconfig:"VPN_PROTOCOL"`         // "openvpn" (default) or "wireguard"
+	WGEndpoint     string `yaml:"wgEndpoint"     envconfig:"VPN_WG_ENDPOINT"`      // e.g., "us1.vpn.b7s.services:51820"
+	WGContainerURL string `yaml:"wgContainerURL" envconfig:"VPN_WG_CONTAINER_URL"` // e.g., "http://wg-us1:8080"
+	WGServerPubkey string `yaml:"wgServerPubkey" envconfig:"VPN_WG_SERVER_PUBKEY"` // Base64 WG server public key
+	WGJWTKeyFile   string `yaml:"wgJwtKeyFile"   envconfig:"VPN_WG_JWT_KEY_FILE"`  // Path to Ed25519 private key
+	WGMaxDevices   int    `yaml:"wgMaxDevices"   envconfig:"VPN_WG_MAX_DEVICES"`   // Default: 3
+	WGSubnet       string `yaml:"wgSubnet"       envconfig:"VPN_WG_SUBNET"`        // Default: "10.8.0" (forms 10.8.0.X)
 }
 
 type CrlConfig struct {
@@ -137,9 +147,12 @@ var globalConfig = &Config{
 		Directory: "./.vpn-indexer",
 	},
 	Vpn: VpnConfig{
-		Domain: "test.domain",
-		Region: "test",
-		Port:   443,
+		Domain:       "test.domain",
+		Region:       "test",
+		Port:         443,
+		Protocol:     "openvpn",
+		WGMaxDevices: 3,
+		WGSubnet:     "10.8.0",
 	},
 	Crl: CrlConfig{
 		UpdateInterval: 60 * time.Minute,
@@ -176,7 +189,111 @@ func Load(configFile string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error processing environment: %w", err)
 	}
+	// Normalize VPN protocol to lowercase for case-insensitive matching
+	globalConfig.Vpn.Protocol = strings.ToLower(globalConfig.Vpn.Protocol)
+
+	// Validate VPN protocol is one of the allowed values
+	// Empty string defaults to openvpn for backwards compatibility
+	if globalConfig.Vpn.Protocol == "" {
+		globalConfig.Vpn.Protocol = "openvpn"
+	}
+	allowedProtocols := map[string]bool{"openvpn": true, "wireguard": true}
+	if !allowedProtocols[globalConfig.Vpn.Protocol] {
+		return nil, fmt.Errorf(
+			"invalid VPN protocol %q: must be one of: openvpn, wireguard",
+			globalConfig.Vpn.Protocol,
+		)
+	}
+
+	// Validate WireGuard configuration if enabled
+	if globalConfig.Vpn.Protocol == "wireguard" {
+		if err := validateWireGuardConfig(&globalConfig.Vpn); err != nil {
+			return nil, fmt.Errorf("invalid WireGuard config: %w", err)
+		}
+	}
+
 	return globalConfig, nil
+}
+
+// validateWireGuardConfig validates WireGuard-specific configuration
+func validateWireGuardConfig(vpn *VpnConfig) error {
+	// Validate required fields are non-empty
+	if strings.TrimSpace(vpn.WGEndpoint) == "" {
+		return fmt.Errorf("WGEndpoint is required for WireGuard protocol")
+	}
+	if strings.TrimSpace(vpn.WGContainerURL) == "" {
+		return fmt.Errorf("WGContainerURL is required for WireGuard protocol")
+	}
+	if strings.TrimSpace(vpn.WGServerPubkey) == "" {
+		return fmt.Errorf("WGServerPubkey is required for WireGuard protocol")
+	}
+	if strings.TrimSpace(vpn.WGJWTKeyFile) == "" {
+		return fmt.Errorf("WGJWTKeyFile is required for WireGuard protocol")
+	}
+
+	// Validate WGJWTKeyFile is readable by actually opening it
+	jwtKeyPath := strings.TrimSpace(vpn.WGJWTKeyFile)
+	if f, err := os.Open(jwtKeyPath); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf(
+				"WGJWTKeyFile %q does not exist",
+				jwtKeyPath,
+			)
+		}
+		return fmt.Errorf(
+			"WGJWTKeyFile %q is not readable: %w",
+			jwtKeyPath,
+			err,
+		)
+	} else {
+		if err := f.Close(); err != nil {
+			return fmt.Errorf(
+				"WGJWTKeyFile %q close failed: %w",
+				jwtKeyPath,
+				err,
+			)
+		}
+	}
+
+	// Validate WGSubnet format (should be like "10.8.0" - first 3 octets)
+	if vpn.WGSubnet != "" {
+		// Ensure no trailing dot
+		if strings.HasSuffix(vpn.WGSubnet, ".") {
+			return fmt.Errorf(
+				"invalid WGSubnet %q: must not have trailing dot",
+				vpn.WGSubnet,
+			)
+		}
+		// Count dots - should be exactly 2
+		if strings.Count(vpn.WGSubnet, ".") != 2 {
+			return fmt.Errorf(
+				"invalid WGSubnet %q: must have exactly 3 octets like '10.8.0'",
+				vpn.WGSubnet,
+			)
+		}
+		// Parse as a /24 network to validate octet values
+		_, _, err := net.ParseCIDR(vpn.WGSubnet + ".0/24")
+		if err != nil {
+			return fmt.Errorf(
+				"invalid WGSubnet %q: must be first 3 octets like '10.8.0'",
+				vpn.WGSubnet,
+			)
+		}
+	}
+
+	// WGMaxDevices: 0 means "use default", negative is invalid
+	// Explicitly set to default here so the behavior is clear
+	if vpn.WGMaxDevices < 0 {
+		return fmt.Errorf(
+			"WGMaxDevices must be non-negative, got %d",
+			vpn.WGMaxDevices,
+		)
+	}
+	if vpn.WGMaxDevices == 0 {
+		vpn.WGMaxDevices = 3 // Default device limit
+	}
+
+	return nil
 }
 
 // GetConfig returns the global config instance
