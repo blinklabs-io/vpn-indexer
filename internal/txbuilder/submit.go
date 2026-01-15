@@ -16,7 +16,7 @@ package txbuilder
 
 import (
 	"bytes"
-	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -41,17 +41,19 @@ func SubmitTx(txRawBytes []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer func() { _ = resp.Body.Close() }()
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
-	if resp.Body != nil {
-		_ = resp.Body.Close()
-	}
 	if resp.StatusCode == http.StatusAccepted {
 		return string(respBody), nil
 	}
-	return "", errors.New("empty body returned")
+	return "", fmt.Errorf(
+		"submit failed with status %d: %s",
+		resp.StatusCode,
+		string(respBody),
+	)
 }
 
 // createHTTPClient with custom timeout
