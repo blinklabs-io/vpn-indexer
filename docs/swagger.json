@@ -160,6 +160,257 @@
                 }
             }
         },
+        "/api/client/wg-devices": {
+            "post": {
+                "description": "List all WireGuard devices registered for a client",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "WGDevices",
+                "parameters": [
+                    {
+                        "description": "Devices Request",
+                        "name": "WGDevicesRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.WGDevicesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Device list",
+                        "schema": {
+                            "$ref": "#/definitions/api.WGDevicesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/client/wg-peer": {
+            "delete": {
+                "description": "Remove a WireGuard device registration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "WGPeerDelete",
+                "parameters": [
+                    {
+                        "description": "Delete Request",
+                        "name": "WGDeleteRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.WGDeleteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deletion successful",
+                        "schema": {
+                            "$ref": "#/definitions/api.WGDeleteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/client/wg-profile": {
+            "post": {
+                "description": "Get a WireGuard configuration profile for a registered device",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain",
+                    "application/json"
+                ],
+                "summary": "WGProfile",
+                "parameters": [
+                    {
+                        "description": "Profile Request",
+                        "name": "WGProfileRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.WGProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "WireGuard config file",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden (subscription expired)",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/client/wg-register": {
+            "post": {
+                "description": "Register a new WireGuard device for a client",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "WGRegister",
+                "parameters": [
+                    {
+                        "description": "Register Request",
+                        "name": "WGRegisterRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.WGRegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Registration successful",
+                        "schema": {
+                            "$ref": "#/definitions/api.WGRegisterResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request (includes generic error for duplicate pubkey to prevent enumeration)",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden (device limit reached or subscription expired)",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/refdata": {
             "get": {
                 "description": "Fetch prices and regions for signup or renewal",
@@ -441,6 +692,17 @@
                 }
             }
         },
+        "api.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
         "api.RefDataResponse": {
             "type": "object",
             "properties": {
@@ -547,6 +809,127 @@
             "properties": {
                 "txCbor": {
                     "type": "string"
+                }
+            }
+        },
+        "api.WGDeleteRequest": {
+            "type": "object",
+            "properties": {
+                "client_id": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "signature": {
+                    "type": "string"
+                },
+                "wg_pubkey": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.WGDeleteResponse": {
+            "type": "object",
+            "properties": {
+                "remaining_devices": {
+                    "type": "integer"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api.WGDeviceInfo": {
+            "type": "object",
+            "properties": {
+                "assigned_ip": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "pubkey": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.WGDevicesRequest": {
+            "type": "object",
+            "properties": {
+                "client_id": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "signature": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.WGDevicesResponse": {
+            "type": "object",
+            "properties": {
+                "devices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.WGDeviceInfo"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.WGProfileRequest": {
+            "type": "object",
+            "properties": {
+                "client_id": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "signature": {
+                    "type": "string"
+                },
+                "wg_pubkey": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.WGRegisterRequest": {
+            "type": "object",
+            "properties": {
+                "client_id": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "signature": {
+                    "type": "string"
+                },
+                "wg_pubkey": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.WGRegisterResponse": {
+            "type": "object",
+            "properties": {
+                "assigned_ip": {
+                    "type": "string"
+                },
+                "device_count": {
+                    "type": "integer"
+                },
+                "device_limit": {
+                    "type": "integer"
+                },
+                "success": {
+                    "type": "boolean"
                 }
             }
         }

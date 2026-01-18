@@ -22,4 +22,6 @@ var MigrateModels = []any{
 	&Reference{},
 	&ReferencePrice{},
 	&ReferenceRegion{},
+	&WGPeer{},
+	&WGIPPool{},
 }
