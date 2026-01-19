@@ -88,6 +88,15 @@ func New(cfg *config.Config, caObj *ca.Ca, assetName []byte) *Client {
 	}
 }
 
+// NewWithConfig creates a Client with only config for general S3 operations.
+// Use this for WireGuard peer registry operations that don't require
+// a specific asset name or CA.
+func NewWithConfig(cfg *config.Config) *Client {
+	return &Client{
+		config: cfg,
+	}
+}
+
 func (c *Client) Generate(host string, port int, dns string) (string, error) {
 	if ok, err := c.ProfileExists(); err != nil {
 		return "", err

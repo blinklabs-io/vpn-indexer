@@ -25,11 +25,14 @@ import (
 
 	"github.com/blinklabs-io/vpn-indexer/internal/api"
 	"github.com/blinklabs-io/vpn-indexer/internal/ca"
+	"github.com/blinklabs-io/vpn-indexer/internal/client"
 	"github.com/blinklabs-io/vpn-indexer/internal/config"
 	"github.com/blinklabs-io/vpn-indexer/internal/crl"
 	"github.com/blinklabs-io/vpn-indexer/internal/database"
 	"github.com/blinklabs-io/vpn-indexer/internal/indexer"
+	"github.com/blinklabs-io/vpn-indexer/internal/jwt"
 	"github.com/blinklabs-io/vpn-indexer/internal/version"
+	"github.com/blinklabs-io/vpn-indexer/internal/wireguard"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/automaxprocs/maxprocs"
 )
@@ -160,7 +163,7 @@ func main() {
 	}
 
 	// Configure CRL
-	crl, err := crl.New(cfg, logger, db, ca)
+	crlInstance, err := crl.New(cfg, logger, db, ca)
 	if err != nil {
 		slog.Error(
 			fmt.Sprintf("failed to configure CRL: %s", err),
@@ -168,8 +171,72 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize WireGuard components if protocol is wireguard
+	var wgClient *wireguard.Client
+	var s3Client *client.Client
+	if cfg.Vpn.Protocol == "wireguard" {
+		slog.Info("initializing WireGuard components")
+
+		// Initialize JWT issuer for WG container authentication
+		jwtIssuer, err := jwt.NewIssuer(cfg.Vpn.WGJWTKeyFile)
+		if err != nil {
+			slog.Error(
+				fmt.Sprintf("failed to initialize JWT issuer: %s", err),
+			)
+			os.Exit(1)
+		}
+
+		// Initialize WG container client
+		wgClient = wireguard.NewClient(cfg.Vpn.WGContainerURL, jwtIssuer)
+
+		// Health check WG container (warn but don't fail if not available)
+		if err := wgClient.Health(); err != nil {
+			slog.Warn(
+				fmt.Sprintf(
+					"WG container not available at startup: %s",
+					err,
+				),
+			)
+		} else {
+			slog.Info("WG container health check passed")
+		}
+
+		// Initialize S3 client for peer registry
+		s3Client = client.NewWithConfig(cfg)
+
+		// Check if DB needs rebuild from S3
+		hasData, err := db.HasWGPeers()
+		if err != nil {
+			slog.Warn(
+				fmt.Sprintf("failed to check for WG peers in DB: %s", err),
+			)
+		} else if !hasData {
+			slog.Info("no WG peers in DB, rebuilding from S3...")
+			if err := s3Client.RebuildWGPeersFromS3(
+				db,
+				cfg.Vpn.Region,
+			); err != nil {
+				slog.Warn(
+					fmt.Sprintf("failed to rebuild WG peers from S3: %s", err),
+				)
+			}
+		}
+
+		// Sync active peers to WG container
+		slog.Info("syncing peers to WG container...")
+		if err := wgClient.SyncPeersToContainer(db, cfg.Vpn.Region); err != nil {
+			slog.Warn(
+				fmt.Sprintf("failed to sync peers to WG container: %s", err),
+			)
+		}
+
+		// Pass WG client and S3 client to CRL for cleanup operations
+		crlInstance.SetWGClient(wgClient)
+		crlInstance.SetS3Client(s3Client)
+	}
+
 	// Start indexer
-	if err := indexer.GetIndexer().Start(cfg, logger, db, ca, crl); err != nil {
+	if err := indexer.GetIndexer().Start(cfg, logger, db, ca, crlInstance); err != nil {
 		slog.Error(
 			fmt.Sprintf("failed to start indexer: %s", err),
 		)
@@ -177,7 +244,7 @@ func main() {
 	}
 
 	// Start API listener
-	if err := api.Start(cfg, db, ca); err != nil {
+	if err := api.Start(cfg, db, ca, wgClient, s3Client); err != nil {
 		slog.Error(
 			"failed to start API:",
 			"error",

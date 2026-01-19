@@ -329,6 +329,43 @@ func (i *Indexer) handleEventClient(txOutput lcommon.Utxo) error {
 		// Region doesn't match, return without error
 		return nil
 	}
+	// Route based on configured protocol
+	switch i.cfg.Vpn.Protocol {
+	case "wireguard":
+		return i.handleWireGuardClient(assetName, clientDatum, txOutput)
+	default: // "openvpn" or unset
+		return i.handleOpenVPNClient(assetName, clientDatum, txOutput)
+	}
+}
+
+// handleWireGuardClient stores client in DB only.
+// Peer registration happens on-demand via the /wg-register API.
+// WireGuard profiles are generated on-demand rather than at indexing time.
+func (i *Indexer) handleWireGuardClient(
+	assetName []byte,
+	clientDatum ClientDatum,
+	txOutput lcommon.Utxo,
+) error {
+	// For WireGuard, the client is already stored in the database above.
+	// No certificate or profile generation is needed here.
+	// Peer registration and profile generation happen via the API endpoints.
+	i.logger.Info(
+		"indexed wireguard client",
+		"client",
+		hex.EncodeToString(assetName),
+		"tx_output",
+		txOutput.Id.String(),
+	)
+	return nil
+}
+
+// handleOpenVPNClient generates OpenVPN certificates and profiles immediately.
+// This is the existing/legacy flow for OpenVPN clients.
+func (i *Indexer) handleOpenVPNClient(
+	assetName []byte,
+	clientDatum ClientDatum,
+	txOutput lcommon.Utxo,
+) error {
 	// Generate client
 	tmpClient := client.New(i.cfg, i.ca, assetName)
 	vpnHost := fmt.Sprintf(
