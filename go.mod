@@ -13,7 +13,7 @@ require (
 	github.com/blinklabs-io/adder v0.35.0
 	github.com/blinklabs-io/gouroboros v0.146.0
 	github.com/glebarez/sqlite v1.11.0
-	github.com/golang-jwt/jwt/v5 v5.3.0
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/spf13/cobra v1.10.2
