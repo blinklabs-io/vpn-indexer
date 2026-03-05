@@ -90,13 +90,14 @@ type VpnConfig struct {
 	Port   int    `yaml:"port"           envconfig:"VPN_PORT"`
 	DNS    string `yaml:"dns"            envconfig:"VPN_DNS"`
 	// WireGuard configuration (disabled by default, set Protocol to "wireguard" to enable)
-	Protocol       string `yaml:"protocol"       envconfig:"VPN_PROTOCOL"`         // "openvpn" (default) or "wireguard"
-	WGEndpoint     string `yaml:"wgEndpoint"     envconfig:"VPN_WG_ENDPOINT"`      // e.g., "us1.vpn.b7s.services:51820"
-	WGContainerURL string `yaml:"wgContainerURL" envconfig:"VPN_WG_CONTAINER_URL"` // e.g., "http://wg-us1:8080"
-	WGServerPubkey string `yaml:"wgServerPubkey" envconfig:"VPN_WG_SERVER_PUBKEY"` // Base64 WG server public key
-	WGJWTKeyFile   string `yaml:"wgJwtKeyFile"   envconfig:"VPN_WG_JWT_KEY_FILE"`  // Path to Ed25519 private key
-	WGMaxDevices   int    `yaml:"wgMaxDevices"   envconfig:"VPN_WG_MAX_DEVICES"`   // Default: 3
-	WGSubnet       string `yaml:"wgSubnet"       envconfig:"VPN_WG_SUBNET"`        // Default: "10.8.0" (forms 10.8.0.X)
+	Protocol         string        `yaml:"protocol"       envconfig:"VPN_PROTOCOL"`             // "openvpn" (default) or "wireguard"
+	WGEndpoint       string        `yaml:"wgEndpoint"     envconfig:"VPN_WG_ENDPOINT"`          // e.g., "us1.vpn.b7s.services:51820"
+	WGContainerURL   string        `yaml:"wgContainerURL" envconfig:"VPN_WG_CONTAINER_URL"`     // e.g., "http://wg-us1:8080"
+	WGServerPubkey   string        `yaml:"wgServerPubkey" envconfig:"VPN_WG_SERVER_PUBKEY"`     // Base64 WG server public key
+	WGJWTKeyFile     string        `yaml:"wgJwtKeyFile"   envconfig:"VPN_WG_JWT_KEY_FILE"`      // Path to Ed25519 private key
+	WGMaxDevices     int           `yaml:"wgMaxDevices"   envconfig:"VPN_WG_MAX_DEVICES"`       // Default: 3
+	WGSubnet         string        `yaml:"wgSubnet"       envconfig:"VPN_WG_SUBNET"`            // Default: "10.8.0" (forms 10.8.0.X)
+	WGExpireInterval time.Duration `yaml:"wgExpireInterval" envconfig:"VPN_WG_EXPIRE_INTERVAL"` // Default: 1h
 }
 
 type CrlConfig struct {
@@ -147,12 +148,13 @@ var globalConfig = &Config{
 		Directory: "./.vpn-indexer",
 	},
 	Vpn: VpnConfig{
-		Domain:       "test.domain",
-		Region:       "test",
-		Port:         443,
-		Protocol:     "openvpn",
-		WGMaxDevices: 3,
-		WGSubnet:     "10.8.0",
+		Domain:           "test.domain",
+		Region:           "test",
+		Port:             443,
+		Protocol:         "openvpn",
+		WGMaxDevices:     3,
+		WGSubnet:         "10.8.0",
+		WGExpireInterval: 60 * time.Minute,
 	},
 	Crl: CrlConfig{
 		UpdateInterval: 60 * time.Minute,

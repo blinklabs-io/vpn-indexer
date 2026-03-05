@@ -153,28 +153,32 @@ func main() {
 		}()
 	}
 
-	// Configure CA
-	ca, err := ca.New(cfg)
-	if err != nil {
-		slog.Error(
-			fmt.Sprintf("failed to configure CA: %s", err),
-		)
-		os.Exit(1)
-	}
-
-	// Configure CRL
-	crlInstance, err := crl.New(cfg, logger, db, ca)
-	if err != nil {
-		slog.Error(
-			fmt.Sprintf("failed to configure CRL: %s", err),
-		)
-		os.Exit(1)
-	}
-
-	// Initialize WireGuard components if protocol is wireguard
+	var caInstance *ca.Ca
+	var crlInstance *crl.Crl
 	var wgClient *wireguard.Client
 	var s3Client *client.Client
-	if cfg.Vpn.Protocol == "wireguard" {
+
+	switch cfg.Vpn.Protocol {
+	case "openvpn":
+		// Configure CA
+		caInstance, err = ca.New(cfg)
+		if err != nil {
+			slog.Error(
+				fmt.Sprintf("failed to configure CA: %s", err),
+			)
+			os.Exit(1)
+		}
+
+		// Configure CRL
+		crlInstance, err = crl.New(cfg, logger, db, caInstance)
+		if err != nil {
+			slog.Error(
+				fmt.Sprintf("failed to configure CRL: %s", err),
+			)
+			os.Exit(1)
+		}
+	case "wireguard":
+		// Initialize WireGuard components if protocol is wireguard
 		slog.Info("initializing WireGuard components")
 
 		// Initialize JWT issuer for WG container authentication
@@ -222,6 +226,14 @@ func main() {
 			}
 		}
 
+		// Create wireguard manager
+		if _, err := wireguard.NewManager(cfg, logger, db, wgClient, s3Client); err != nil {
+			slog.Error(
+				fmt.Sprintf("failed to initialize wireguard manager: %s", err),
+			)
+			os.Exit(1)
+		}
+
 		// Sync active peers to WG container
 		slog.Info("syncing peers to WG container...")
 		if err := wgClient.SyncPeersToContainer(db, cfg.Vpn.Region); err != nil {
@@ -229,14 +241,10 @@ func main() {
 				fmt.Sprintf("failed to sync peers to WG container: %s", err),
 			)
 		}
-
-		// Pass WG client and S3 client to CRL for cleanup operations
-		crlInstance.SetWGClient(wgClient)
-		crlInstance.SetS3Client(s3Client)
 	}
 
 	// Start indexer
-	if err := indexer.GetIndexer().Start(cfg, logger, db, ca, crlInstance); err != nil {
+	if err := indexer.GetIndexer().Start(cfg, logger, db, caInstance, crlInstance); err != nil {
 		slog.Error(
 			fmt.Sprintf("failed to start indexer: %s", err),
 		)
@@ -244,7 +252,7 @@ func main() {
 	}
 
 	// Start API listener
-	if err := api.Start(cfg, db, ca, wgClient, s3Client); err != nil {
+	if err := api.Start(cfg, db, caInstance, wgClient, s3Client); err != nil {
 		slog.Error(
 			"failed to start API:",
 			"error",
