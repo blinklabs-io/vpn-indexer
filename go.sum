@@ -1,5 +1,5 @@
-filippo.io/edwards25519 v1.1.1 h1:YpjwWWlNmGIDyXOn8zLzqiD+9TyIlPhGFG96P39uBpw=
-filippo.io/edwards25519 v1.1.1/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
+filippo.io/edwards25519 v1.2.0 h1:crnVqOiS4jqYleHd9vaKZ+HKtHfllngJIiOpNpoJsjo=
+filippo.io/edwards25519 v1.2.0/go.mod h1:xzAOLCNug/yB62zG1bQ8uziwrIqIuxhctzJT18Q77mc=
 github.com/KyleBanks/depth v1.2.1 h1:5h8fQADFrWtarTdtDudMmGsC7GPbOAu6RVB3ffsVFHc=
 github.com/KyleBanks/depth v1.2.1/go.mod h1:jzSb9d0L43HxTQfT+oSA1EEp2q+ne2uh6XgeJcm8brE=
 github.com/Masterminds/semver/v3 v3.4.0 h1:Zog+i5UMtVoCU8oKka5P7i9q9HgrJeGzI9SA1Xbatp0=
@@ -59,12 +59,12 @@ github.com/bits-and-blooms/bitset v1.20.0 h1:2F+rfL86jE2d/bmw7OhqUg2Sj/1rURkBn3M
 github.com/bits-and-blooms/bitset v1.20.0/go.mod h1:7hO7Gc7Pp1vODcmWvKMRA9BNmbv6a/7QIWpPxHddWR8=
 github.com/blinklabs-io/adder v0.35.0 h1:QKmXb7HsejqOKxauU2Siw0ekTMqNsFr2cxdLcOQvXWs=
 github.com/blinklabs-io/adder v0.35.0/go.mod h1:90EQBbKoIhcCdyJ5OlE9tDT1cn69fW/ePYVatS62BKo=
-github.com/blinklabs-io/gouroboros v0.146.0 h1:bZD6GAbHpTRhaUEDFuD+s21eZwdAwWBJ5w5ebBRJKLk=
-github.com/blinklabs-io/gouroboros v0.146.0/go.mod h1:qRfnn0az84aaPjsvtQK52yoApww0bxQsMu9LJgQ1ftg=
-github.com/blinklabs-io/ouroboros-mock v0.4.0 h1:ppOcTMnC/2f5rYYSlvNqcGfAQOIpMCSDUrNh9K6a4mY=
-github.com/blinklabs-io/ouroboros-mock v0.4.0/go.mod h1:e+Kck8bmdOuaN7IfkbVvbqAVlskXNXB95oHI3YlFG5g=
-github.com/blinklabs-io/plutigo v0.0.18 h1:axw0QVrdiqEjt+ssKs5zY2ycogZ+j5r0IETHkAda+8Q=
-github.com/blinklabs-io/plutigo v0.0.18/go.mod h1:L72ik2SFGruMCxqI5nnuMMz0TwSu9Fk+MekKynr3SPQ=
+github.com/blinklabs-io/gouroboros v0.160.3 h1:YNjUMKATYenIzi1pgO0PVBGTiCTyMzXMHAAm1R136Eg=
+github.com/blinklabs-io/gouroboros v0.160.3/go.mod h1:Q6p3UaVs7AIMFoTuWdFByFeDaMD93yl3MDL3kp+h1y0=
+github.com/blinklabs-io/ouroboros-mock v0.9.1 h1:88LvCaivQ6j/JSb3j8t99lQvsgnWcjXGaMPdZngbxZo=
+github.com/blinklabs-io/ouroboros-mock v0.9.1/go.mod h1:wLZTHLwKdIC9axVzG7nyAynn2wfLp/ikvX9LjsDh8Xw=
+github.com/blinklabs-io/plutigo v0.0.27 h1:/leKVzb2XrgXo2yGsgpynpw/fh2sB8RNom+k3mXUwhA=
+github.com/blinklabs-io/plutigo v0.0.27/go.mod h1:5wieesggbSTUonybIKc+6i7xi1o9IjORD9hko3fxKlo=
 github.com/btcsuite/btcd v0.20.1-beta/go.mod h1:wVuoA8VJLEcwgqHBwHmzLRazpKxTv13Px/pDuV7OomQ=
 github.com/btcsuite/btcd v0.22.0-beta.0.20220111032746-97732e52810c/go.mod h1:tjmYdS6MLJ5/s0Fj4DbLgSbDHbEqLJrtnHecBFkdz5M=
 github.com/btcsuite/btcd v0.23.5-0.20231215221805-96c9fd8078fd/go.mod h1:nm3Bko6zh6bWP60UxwoT5LzdGJsQJaPo6HjduXq9p6A=
@@ -117,8 +117,8 @@ github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkp
 github.com/dustin/go-humanize v1.0.1/go.mod h1:Mu1zIs6XwVuF/gI1OepvI0qD18qycQx+mFykh5fBlto=
 github.com/emicklei/go-restful/v3 v3.12.2 h1:DhwDP0vY3k8ZzE0RunuJy8GhNpPL6zqLkDf9B/a0/xU=
 github.com/emicklei/go-restful/v3 v3.12.2/go.mod h1:6n3XBCmQQb25CM2LCACGz8ukIrRry+4bhvbpWn3mrbc=
-github.com/ethereum/go-ethereum v1.17.0 h1:2D+1Fe23CwZ5tQoAS5DfwKFNI1HGcTwi65/kRlAVxes=
-github.com/ethereum/go-ethereum v1.17.0/go.mod h1:2W3msvdosS/MCWytpqTcqgFiRYbTH59FxDJzqah120o=
+github.com/ethereum/go-ethereum v1.17.1 h1:IjlQDjgxg2uL+GzPRkygGULPMLzcYWncEI7wbaizvho=
+github.com/ethereum/go-ethereum v1.17.1/go.mod h1:7UWOVHL7K3b8RfVRea022btnzLCaanwHtBuH1jUCH/I=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
 github.com/fxamacker/cbor/v2 v2.9.0 h1:NpKPmjDBgUfBms6tr6JZkTHtfFGcMKsw3eGcmD/sapM=
