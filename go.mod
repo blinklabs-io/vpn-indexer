@@ -3,7 +3,7 @@ module github.com/blinklabs-io/vpn-indexer
 go 1.25.0
 
 require (
-	github.com/Salvionied/apollo v1.6.0
+	github.com/Salvionied/apollo v1.7.0
 	github.com/SundaeSwap-finance/kugo v1.3.0
 	github.com/SundaeSwap-finance/ogmigo/v6 v6.2.0
 	github.com/aws/aws-sdk-go-v2 v1.41.5
@@ -31,7 +31,7 @@ require (
 )
 
 require (
-	filippo.io/edwards25519 v1.1.1 // indirect
+	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251001021608-1fe7b43fc4d6 // indirect
 	github.com/aws/aws-sdk-go v1.55.6 // indirect
