@@ -197,8 +197,8 @@ func BuildSignupTx(
 		Tag: Redeemer.MINT,
 		// NOTE: these values are estimated
 		ExUnits: Redeemer.ExecutionUnits{
-			Mem:   300_000,
-			Steps: 100_000_000,
+			Mem:   400_000,
+			Steps: 110_000_000,
 		},
 		Data: PlutusData.PlutusData{
 			PlutusDataType: PlutusData.PlutusBytes,
