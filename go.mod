@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/Salvionied/apollo v1.6.0
 	github.com/SundaeSwap-finance/kugo v1.3.0
-	github.com/SundaeSwap-finance/ogmigo/v6 v6.2.0
+	github.com/SundaeSwap-finance/ogmigo/v6 v6.2.1
 	github.com/aws/aws-sdk-go-v2 v1.41.5
 	github.com/aws/aws-sdk-go-v2/config v1.32.14
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.99.0
