@@ -220,7 +220,7 @@ func BuildSignupTx(
 			),
 		},
 	}
-	apollob, err = apollob.
+	apollob, _, err = apollob.
 		// Load all available UTxOs from user's wallet
 		AddLoadedUTxOs(availableUtxos...).
 		// Explicitly set our chosen inputs
@@ -257,13 +257,14 @@ func BuildSignupTx(
 			scriptRef.Id().String(),
 			int(scriptRef.Index()),
 		).
-		MintAssetsWithRedeemer(
+		MintAssetsWithRedeemerAndExUnits(
 			apollo.NewUnit(
 				hex.EncodeToString(scriptHash),
 				string(clientId),
 				1,
 			),
-			mintRedeemer,
+			mintRedeemer.Data,
+			mintRedeemer.ExUnits,
 		).
 		AddRequiredSigner(
 			serialization.PubKeyHash(ownerCredential),
