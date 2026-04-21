@@ -289,7 +289,7 @@ func BuildRenewTransferTx(
 			serialization.PubKeyHash(client.Credential),
 		)
 	}
-	apollob, err = apollob.Complete()
+	apollob, _, err = apollob.Complete()
 	if err != nil {
 		return nil, fmt.Errorf("build transaction: %w", err)
 	}
