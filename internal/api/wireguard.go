@@ -132,7 +132,7 @@ func (r *WGBaseRequest) parseBaseFields() error {
 // WireGuard config template
 const wgConfigTemplate = `[Interface]
 PrivateKey = <REPLACE_WITH_YOUR_PRIVATE_KEY>
-Address = %s/32
+Address = %s/24
 DNS = %s
 
 [Peer]
