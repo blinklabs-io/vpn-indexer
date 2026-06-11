@@ -67,34 +67,13 @@ func decodeRefDatumFlexible(datumCBOR []byte) ([]plan, []string, error) {
 	return outPlans, outRegions, nil
 }
 
-// Removes cbor.Tag and cbor.Constructor.
+// Removes cbor.Tag wrappers. Constructors/alternatives decode into cbor.Tag
+// when unmarshaling into any, so unwrapping the tag exposes their fields.
 func unwrapAll(x any) any {
 	for {
 		switch t := x.(type) {
 		case cbor.Tag:
 			x = t.Content
-			continue
-		case *cbor.ConstructorDecoder:
-			fields, err := t.ParsedFields()
-			if err != nil {
-				return x
-			}
-			if len(fields) == 1 {
-				x = fields[0]
-				continue
-			}
-			x = fields
-			continue
-		case cbor.ConstructorDecoder:
-			fields, err := t.ParsedFields()
-			if err != nil {
-				return x
-			}
-			if len(fields) == 1 {
-				x = fields[0]
-				continue
-			}
-			x = fields
 			continue
 		default:
 			return x
