@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/blinklabs-io/adder/event"
-	filter_chainsync "github.com/blinklabs-io/adder/filter/chainsync"
+	filter_cardano "github.com/blinklabs-io/adder/filter/cardano"
 	filter_event "github.com/blinklabs-io/adder/filter/event"
 	input_chainsync "github.com/blinklabs-io/adder/input/chainsync"
 	output_embedded "github.com/blinklabs-io/adder/output/embedded"
@@ -184,10 +184,10 @@ func (i *Indexer) Start(
 	)
 	i.pipeline.AddFilter(filterEvent)
 	// We only care about transactions involving our script address
-	filterChainsync := filter_chainsync.New(
-		filter_chainsync.WithAddresses([]string{cfg.Indexer.ScriptAddress}),
+	filterCardano := filter_cardano.New(
+		filter_cardano.WithAddresses([]string{cfg.Indexer.ScriptAddress}),
 	)
-	i.pipeline.AddFilter(filterChainsync)
+	i.pipeline.AddFilter(filterCardano)
 	// Configure pipeline output
 	output := output_embedded.New(
 		output_embedded.WithCallbackFunc(i.handleEvent),

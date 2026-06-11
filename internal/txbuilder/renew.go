@@ -213,7 +213,7 @@ func BuildRenewTransferTx(
 	clientDatum := PlutusData.PlutusData{
 		PlutusDataType: PlutusData.PlutusBytes,
 		TagNr:          0,
-		Value: cbor.NewConstructor(
+		Value: cbor.NewConstructorEncoder(
 			1,
 			cbor.IndefLengthList{
 				ownerCredential,
@@ -233,7 +233,7 @@ func BuildRenewTransferTx(
 		Data: PlutusData.PlutusData{
 			PlutusDataType: PlutusData.PlutusBytes,
 			TagNr:          0,
-			Value: cbor.NewConstructor(
+			Value: cbor.NewConstructorEncoder(
 				2,
 				cbor.IndefLengthList{
 					newOwnerCred,
