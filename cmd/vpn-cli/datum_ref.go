@@ -74,20 +74,27 @@ func unwrapAll(x any) any {
 		case cbor.Tag:
 			x = t.Content
 			continue
-		case *cbor.Constructor:
-			fields := t.Fields()
+		case *cbor.ConstructorDecoder:
+			fields, err := t.ParsedFields()
+			if err != nil {
+				return x
+			}
 			if len(fields) == 1 {
 				x = fields[0]
 				continue
 			}
 			x = fields
 			continue
-		case cbor.Constructor:
-			if len(t.Fields()) == 1 {
-				x = t.Fields()[0]
+		case cbor.ConstructorDecoder:
+			fields, err := t.ParsedFields()
+			if err != nil {
+				return x
+			}
+			if len(fields) == 1 {
+				x = fields[0]
 				continue
 			}
-			x = t.Fields()
+			x = fields
 			continue
 		default:
 			return x
