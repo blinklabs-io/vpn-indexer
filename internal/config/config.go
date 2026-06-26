@@ -89,12 +89,15 @@ type VpnConfig struct {
 	Region string `yaml:"region"         envconfig:"VPN_REGION"`
 	Port   int    `yaml:"port"           envconfig:"VPN_PORT"`
 	DNS    string `yaml:"dns"            envconfig:"VPN_DNS"`
+	// JWTKeyFile is the Ed25519 private key used to sign API session tokens
+	// (required for all protocols) and to authenticate the indexer to the
+	// WireGuard container.
+	JWTKeyFile string `yaml:"jwtKeyFile"     envconfig:"VPN_JWT_KEY_FILE"` // Path to Ed25519 private key (required)
 	// WireGuard configuration (disabled by default, set Protocol to "wireguard" to enable)
 	Protocol         string        `yaml:"protocol"       envconfig:"VPN_PROTOCOL"`             // "openvpn" (default) or "wireguard"
 	WGEndpoint       string        `yaml:"wgEndpoint"     envconfig:"VPN_WG_ENDPOINT"`          // e.g., "us1.vpn.b7s.services:51820"
 	WGContainerURL   string        `yaml:"wgContainerURL" envconfig:"VPN_WG_CONTAINER_URL"`     // e.g., "http://wg-us1:8080"
 	WGServerPubkey   string        `yaml:"wgServerPubkey" envconfig:"VPN_WG_SERVER_PUBKEY"`     // Base64 WG server public key
-	WGJWTKeyFile     string        `yaml:"wgJwtKeyFile"   envconfig:"VPN_WG_JWT_KEY_FILE"`      // Path to Ed25519 private key
 	WGMaxDevices     int           `yaml:"wgMaxDevices"   envconfig:"VPN_WG_MAX_DEVICES"`       // Default: 3
 	WGSubnet         string        `yaml:"wgSubnet"       envconfig:"VPN_WG_SUBNET"`            // Default: "10.8.0" (forms 10.8.0.X)
 	WGExpireInterval time.Duration `yaml:"wgExpireInterval" envconfig:"VPN_WG_EXPIRE_INTERVAL"` // Default: 1h
@@ -207,6 +210,12 @@ func Load(configFile string) (*Config, error) {
 		)
 	}
 
+	// The JWT key is required for all protocols: it signs the session tokens
+	// used to authenticate every API client.
+	if err := validateJWTKeyFile(&globalConfig.Vpn); err != nil {
+		return nil, err
+	}
+
 	// Validate WireGuard configuration if enabled
 	if globalConfig.Vpn.Protocol == "wireguard" {
 		if err := validateWireGuardConfig(&globalConfig.Vpn); err != nil {
@@ -215,6 +224,28 @@ func Load(configFile string) (*Config, error) {
 	}
 
 	return globalConfig, nil
+}
+
+// validateJWTKeyFile ensures the Ed25519 key used to sign session tokens (all
+// protocols) and to authenticate to the WireGuard container is configured and
+// readable.
+func validateJWTKeyFile(vpn *VpnConfig) error {
+	// Validate the path as configured (no trimming): surrounding whitespace
+	// should fail here rather than later when jwt.NewIssuer opens the raw value.
+	if vpn.JWTKeyFile == "" {
+		return fmt.Errorf("JWTKeyFile is required")
+	}
+	f, err := os.Open(vpn.JWTKeyFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("JWTKeyFile %q does not exist", vpn.JWTKeyFile)
+		}
+		return fmt.Errorf("JWTKeyFile %q is not readable: %w", vpn.JWTKeyFile, err)
+	}
+	if err := f.Close(); err != nil {
+		return fmt.Errorf("JWTKeyFile %q close failed: %w", vpn.JWTKeyFile, err)
+	}
+	return nil
 }
 
 // validateWireGuardConfig validates WireGuard-specific configuration
@@ -228,33 +259,6 @@ func validateWireGuardConfig(vpn *VpnConfig) error {
 	}
 	if strings.TrimSpace(vpn.WGServerPubkey) == "" {
 		return fmt.Errorf("WGServerPubkey is required for WireGuard protocol")
-	}
-	if strings.TrimSpace(vpn.WGJWTKeyFile) == "" {
-		return fmt.Errorf("WGJWTKeyFile is required for WireGuard protocol")
-	}
-
-	// Validate WGJWTKeyFile is readable by actually opening it
-	jwtKeyPath := strings.TrimSpace(vpn.WGJWTKeyFile)
-	if f, err := os.Open(jwtKeyPath); err != nil {
-		if os.IsNotExist(err) {
-			return fmt.Errorf(
-				"WGJWTKeyFile %q does not exist",
-				jwtKeyPath,
-			)
-		}
-		return fmt.Errorf(
-			"WGJWTKeyFile %q is not readable: %w",
-			jwtKeyPath,
-			err,
-		)
-	} else {
-		if err := f.Close(); err != nil {
-			return fmt.Errorf(
-				"WGJWTKeyFile %q close failed: %w",
-				jwtKeyPath,
-				err,
-			)
-		}
 	}
 
 	// Validate WGSubnet format (should be like "10.8.0" - first 3 octets)

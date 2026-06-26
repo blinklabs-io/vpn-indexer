@@ -23,6 +23,67 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/auth/session": {
+            "post": {
+                "description": "Exchange a wallet-signed challenge for a short-lived session token covering all of the wallet's subscriptions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "AuthSession",
+                "parameters": [
+                    {
+                        "description": "Session Request",
+                        "name": "SessionRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.SessionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Session token",
+                        "schema": {
+                            "$ref": "#/definitions/api.SessionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden (no subscriptions for wallet)",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/client/available": {
             "post": {
                 "description": "Check if a client profile is available",
@@ -123,7 +184,12 @@ const docTemplate = `{
         },
         "/api/client/profile": {
             "post": {
-                "description": "Fetch a client VPN profile given a COSE payload via signed S3 link",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Fetch a client VPN profile via a signed S3 link; authenticate with a session Bearer token and provide the subscription id in the body",
                 "consumes": [
                     "application/json"
                 ],
@@ -152,6 +218,18 @@ const docTemplate = `{
                             "type": "string"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
@@ -169,6 +247,11 @@ const docTemplate = `{
         },
         "/api/client/wg-devices": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "List all WireGuard devices registered for a client",
                 "consumes": [
                     "application/json"
@@ -224,6 +307,11 @@ const docTemplate = `{
         },
         "/api/client/wg-peer": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Remove a WireGuard device registration",
                 "consumes": [
                     "application/json"
@@ -291,6 +379,11 @@ const docTemplate = `{
         },
         "/api/client/wg-profile": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get a WireGuard configuration profile for a registered device",
                 "consumes": [
                     "application/json"
@@ -359,6 +452,11 @@ const docTemplate = `{
         },
         "/api/client/wg-register": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Register a new WireGuard device for a client",
                 "consumes": [
                     "application/json"
@@ -690,12 +788,6 @@ const docTemplate = `{
             "properties": {
                 "id": {
                     "type": "string"
-                },
-                "key": {
-                    "type": "string"
-                },
-                "signature": {
-                    "type": "string"
                 }
             }
         },
@@ -735,6 +827,32 @@ const docTemplate = `{
                 },
                 "price": {
                     "type": "integer"
+                }
+            }
+        },
+        "api.SessionRequest": {
+            "type": "object",
+            "required": [
+                "key",
+                "signature"
+            ],
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "signature": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.SessionResponse": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "integer"
+                },
+                "token": {
+                    "type": "string"
                 }
             }
         },
@@ -825,12 +943,6 @@ const docTemplate = `{
                 "client_id": {
                     "type": "string"
                 },
-                "key": {
-                    "type": "string"
-                },
-                "signature": {
-                    "type": "string"
-                },
                 "wg_pubkey": {
                     "type": "string"
                 }
@@ -866,12 +978,6 @@ const docTemplate = `{
             "properties": {
                 "client_id": {
                     "type": "string"
-                },
-                "key": {
-                    "type": "string"
-                },
-                "signature": {
-                    "type": "string"
                 }
             }
         },
@@ -895,12 +1001,6 @@ const docTemplate = `{
                 "client_id": {
                     "type": "string"
                 },
-                "key": {
-                    "type": "string"
-                },
-                "signature": {
-                    "type": "string"
-                },
                 "wg_pubkey": {
                     "type": "string"
                 }
@@ -910,12 +1010,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "client_id": {
-                    "type": "string"
-                },
-                "key": {
-                    "type": "string"
-                },
-                "signature": {
                     "type": "string"
                 },
                 "wg_pubkey": {
@@ -939,6 +1033,14 @@ const docTemplate = `{
                     "type": "boolean"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Session token from POST /api/auth/session, sent as \"Bearer \u003ctoken\u003e\".",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

@@ -157,6 +157,19 @@ func main() {
 	var crlInstance *crl.Crl
 	var wgClient *wireguard.Client
 	var s3Client *client.Client
+	var jwtIssuer *jwt.Issuer
+
+	// Initialize the JWT issuer up front: it signs browser session tokens for
+	// every protocol (so /api/auth/session is available regardless of protocol)
+	// and also authenticates the indexer to the WireGuard container. The key
+	// file config (VPN_JWT_KEY_FILE) is required for all protocols.
+	jwtIssuer, err = jwt.NewIssuer(cfg.Vpn.JWTKeyFile)
+	if err != nil {
+		slog.Error(
+			fmt.Sprintf("failed to initialize JWT issuer: %s", err),
+		)
+		os.Exit(1)
+	}
 
 	switch cfg.Vpn.Protocol {
 	case "openvpn":
@@ -180,15 +193,6 @@ func main() {
 	case "wireguard":
 		// Initialize WireGuard components if protocol is wireguard
 		slog.Info("initializing WireGuard components")
-
-		// Initialize JWT issuer for WG container authentication
-		jwtIssuer, err := jwt.NewIssuer(cfg.Vpn.WGJWTKeyFile)
-		if err != nil {
-			slog.Error(
-				fmt.Sprintf("failed to initialize JWT issuer: %s", err),
-			)
-			os.Exit(1)
-		}
 
 		// Initialize WG container client
 		wgClient = wireguard.NewClient(cfg.Vpn.WGContainerURL, jwtIssuer)
@@ -252,7 +256,7 @@ func main() {
 	}
 
 	// Start API listener
-	if err := api.Start(cfg, db, caInstance, wgClient, s3Client); err != nil {
+	if err := api.Start(cfg, db, caInstance, wgClient, s3Client, jwtIssuer); err != nil {
 		slog.Error(
 			"failed to start API:",
 			"error",

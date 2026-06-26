@@ -15,21 +15,16 @@
 package api
 
 import (
-	"crypto/ed25519"
-	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
-	"strconv"
 	"time"
 
 	lcommon "github.com/blinklabs-io/gouroboros/ledger/common"
 	"github.com/blinklabs-io/vpn-indexer/internal/client"
 	"github.com/blinklabs-io/vpn-indexer/internal/database"
-	"github.com/veraison/go-cose"
 )
 
 // ClientListRequest provides the payment credential hash to search
@@ -111,15 +106,12 @@ func (a *Api) handleClientList(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(resp)
 }
 
-// ClientProfileRequest provides the client ID and COSE payload for verification
+// ClientProfileRequest names the target subscription; auth is via the session token
 type ClientProfileRequest struct {
-	Id        string `json:"id"`
-	Signature string `json:"signature"`
-	Key       string `json:"key"`
-	// Inner representations
-	innerId        []byte
-	innerSignature cose.UntaggedSign1Message
-	innerKey       cose.Key
+	Id string `json:"id"`
+	// Inner representation (not serialized). Authentication is via a Bearer
+	// session token; id only names the target subscription.
+	innerId []byte
 }
 
 func (r *ClientProfileRequest) UnmarshalJSON(data []byte) error {
@@ -128,45 +120,28 @@ func (r *ClientProfileRequest) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &tmpData); err != nil {
 		return err
 	}
-	// Copy original request data
 	r.Id = tmpData.Id
-	r.Signature = tmpData.Signature
-	r.Key = tmpData.Key
-	// Client ID
-	tmpId, err := hex.DecodeString(tmpData.Id)
+	id, err := hex.DecodeString(r.Id)
 	if err != nil {
 		return errors.New("decode client ID hex")
 	}
-	r.innerId = tmpId
-	// Signature
-	sigBytes, err := hex.DecodeString(tmpData.Signature)
-	if err != nil {
-		return errors.New("decode signature hex")
-	}
-	if err := r.innerSignature.UnmarshalCBOR(sigBytes); err != nil {
-		return fmt.Errorf("decode signature: %w", err)
-	}
-	// Key
-	keyBytes, err := hex.DecodeString(tmpData.Key)
-	if err != nil {
-		return errors.New("decode key hex")
-	}
-	if err := r.innerKey.UnmarshalCBOR(keyBytes); err != nil {
-		return fmt.Errorf("decode key: %w", err)
-	}
+	r.innerId = id
 	return nil
 }
 
 // handleClientProfile godoc
 //
 //	@Summary		ClientProfile
-//	@Description	Fetch a client VPN profile given a COSE payload via signed S3 link
+//	@Description	Fetch a client VPN profile via a signed S3 link; authenticate with a session Bearer token and provide the subscription id in the body
 //	@Accept			json
 //	@Param			ClientProfileRequest	body		ClientProfileRequest	true	"Profile Request"
 //	@Success		302						{string}	string					"Found"
 //	@Failure		400						{object}	string					"Bad Request"
+//	@Failure		401						{object}	string					"Unauthorized"
+//	@Failure		403						{object}	string					"Forbidden"
 //	@Failure		405						{object}	string					"Method Not Allowed"
 //	@Failure		500						{object}	string					"Server Error"
+//	@Security		BearerAuth
 //	@Router			/api/client/profile [post]
 func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -183,16 +158,20 @@ func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Lookup client in database
-	tmpClient, err := a.db.ClientByAssetName(req.innerId)
+	// Authenticate via the Bearer session token and authorise the requested
+	// subscription against the token's wallet credential.
+	tmpClient, err := a.authenticate(r, req.innerId)
 	if err != nil {
-		slog.Error(
-			"failed to lookup client in database",
-			"error",
-			err,
+		a.writeAuthError(w, err)
+		return
+	}
+
+	// Reject expired subscriptions, as the WireGuard handlers do.
+	if time.Now().After(tmpClient.Expiration) {
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write(
+			[]byte(`{"error":"Forbidden","reason":"subscription has expired"}`),
 		)
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(`{"error":"Internal server error"}`))
 		return
 	}
 
@@ -210,91 +189,6 @@ func (a *Api) handleClientProfile(w http.ResponseWriter, r *http.Request) {
 	} else if !ok {
 		w.WriteHeader(http.StatusNotFound)
 		_, _ = w.Write([]byte(`{"error":"Not found","reason":"client profile doesn't exist"}`))
-		return
-	}
-
-	// Verify challenge string meets requirements
-	challengeClientId := string(
-		req.innerSignature.Payload[0:len(req.Id)],
-	)
-	if challengeClientId != req.Id {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write(
-			[]byte(
-				`{"error":"Invalid request","reason":"challenge string does not match client ID"}`,
-			),
-		)
-		return
-	}
-	challengeTimestamp := string(
-		req.innerSignature.Payload[len(challengeClientId):],
-	)
-	tmpTimestamp, err := strconv.ParseInt(challengeTimestamp, 10, 64)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write(
-			[]byte(
-				`{"error":"Invalid request","reason":"could not extract timestamp from challenge string"}`,
-			),
-		)
-		return
-	}
-	timestamp := time.Unix(tmpTimestamp, 0)
-	if time.Since(timestamp) > (15 * time.Minute) {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write(
-			[]byte(
-				`{"error":"Invalid request","reason":"challenge string timestamp is too old"}`,
-			),
-		)
-		return
-	}
-
-	// Verify challenge signature
-	vkey, err := req.innerKey.PublicKey()
-	if err != nil {
-		slog.Error(
-			"failed to get public key",
-			"error",
-			err,
-		)
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(`{"error":"Internal server error"}`))
-		return
-	}
-	verifier, err := cose.NewVerifier(cose.AlgorithmEdDSA, vkey)
-	if err != nil {
-		slog.Error(
-			"failed to create verifier",
-			"error",
-			err,
-		)
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(`{"error":"Internal server error"}`))
-		return
-	}
-	if err := req.innerSignature.Verify(nil, verifier); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write(
-			[]byte(
-				`{"error":"Invalid request","reason":"failed to validate signature"}`,
-			),
-		)
-		return
-	}
-	// Check that signing key matches known client credential
-	vkeyHash := lcommon.Blake2b224Hash(
-		[]byte(
-			vkey.(ed25519.PublicKey),
-		),
-	)
-	if subtle.ConstantTimeCompare(vkeyHash.Bytes(), tmpClient.Credential) != 1 {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write(
-			[]byte(
-				`{"error":"Invalid request","reason":"key hash does not match credential for client"}`,
-			),
-		)
 		return
 	}
 

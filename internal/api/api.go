@@ -25,6 +25,7 @@ import (
 	"github.com/blinklabs-io/vpn-indexer/internal/client"
 	"github.com/blinklabs-io/vpn-indexer/internal/config"
 	"github.com/blinklabs-io/vpn-indexer/internal/database"
+	"github.com/blinklabs-io/vpn-indexer/internal/jwt"
 	"github.com/blinklabs-io/vpn-indexer/internal/wireguard"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
@@ -35,39 +36,54 @@ const (
 
 // Api holds the dependencies for the API server.
 type Api struct {
-	cfg      *config.Config
-	db       *database.Database
-	ca       *ca.Ca
-	wgClient *wireguard.Client
-	s3Client *client.Client
+	cfg       *config.Config
+	db        *database.Database
+	ca        *ca.Ca
+	wgClient  *wireguard.Client
+	s3Client  *client.Client
+	jwtIssuer *jwt.Issuer
 }
 
-// @title			vpn-indexer
-// @version		v0
-// @description	NABU VPN indexer API
-// @BasePath		/
-// @contact.name	Blink Labs Software
-// @contact.url	https://blinklabs.io
-// @contact.email	support@blinklabs.io
+// @title						vpn-indexer
+// @version					v0
+// @description				NABU VPN indexer API
+// @BasePath					/
+// @contact.name				Blink Labs Software
+// @contact.url				https://blinklabs.io
+// @contact.email				support@blinklabs.io
 //
-// @license.name	Apache 2.0
-// @license.url	http://www.apache.org/licenses/LICENSE-2.0.html
+// @license.name				Apache 2.0
+// @license.url				http://www.apache.org/licenses/LICENSE-2.0.html
+//
+// @securityDefinitions.apikey	BearerAuth
+// @in							header
+// @name						Authorization
+// @description				Session token from POST /api/auth/session, sent as "Bearer <token>".
 func Start(
 	cfg *config.Config,
 	db *database.Database,
 	ca *ca.Ca,
 	wgClient *wireguard.Client,
 	s3Client *client.Client,
+	jwtIssuer *jwt.Issuer,
 ) error {
 	logger := slog.Default()
 	logger.Info("initializing API server")
 
+	// The JWT issuer is required: the session auth route and every
+	// session-protected handler dereference it. Fail fast rather than register
+	// handlers that would panic at request time.
+	if jwtIssuer == nil {
+		return fmt.Errorf("jwtIssuer is required")
+	}
+
 	api := &Api{
-		cfg:      cfg,
-		db:       db,
-		ca:       ca,
-		wgClient: wgClient,
-		s3Client: s3Client,
+		cfg:       cfg,
+		db:        db,
+		ca:        ca,
+		wgClient:  wgClient,
+		s3Client:  s3Client,
+		jwtIssuer: jwtIssuer,
 	}
 
 	//
@@ -90,6 +106,10 @@ func Start(
 	mainMux.HandleFunc("/api/tx/renew", api.handleTxRenew)
 	mainMux.HandleFunc("/api/tx/transfer", api.handleTxTransfer)
 	mainMux.HandleFunc("/api/tx/submit", api.handleTxSubmit)
+
+	// Session auth route. The JWT issuer is required for all protocols, so this
+	// is always available.
+	mainMux.HandleFunc("/api/auth/session", api.handleAuthSession)
 
 	// WireGuard API routes (only register when both wgClient and s3Client are available)
 	if api.wgClient != nil && api.s3Client != nil {
