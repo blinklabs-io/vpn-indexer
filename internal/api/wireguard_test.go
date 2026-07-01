@@ -90,24 +90,27 @@ func TestWGRegisterRequestUnmarshal(t *testing.T) {
 		shouldError bool
 	}{
 		{
-			name:        "empty object",
-			json:        `{}`,
-			shouldError: true, // hex decode fails on empty string
+			name: "empty object",
+			json: `{}`,
+			// Empty client_id decodes to empty bytes; authentication (and the
+			// requirement for a client_id) is enforced later in the handler.
+			shouldError: false,
 		},
 		{
 			name:        "invalid client_id hex",
-			json:        `{"client_id": "not-hex", "wg_pubkey": "test", "timestamp": 123, "signature": "abc", "key": "def"}`,
+			json:        `{"client_id": "not-hex", "wg_pubkey": "test"}`,
 			shouldError: true,
 		},
 		{
-			name:        "invalid signature hex",
-			json:        `{"client_id": "0123456789abcdef", "wg_pubkey": "testkey", "timestamp": 123, "signature": "not-hex", "key": "abcd"}`,
-			shouldError: true,
+			name:        "valid client_id",
+			json:        `{"client_id": "0123456789abcdef", "wg_pubkey": "testkey"}`,
+			shouldError: false,
 		},
 		{
-			name:        "valid hex but invalid CBOR",
-			json:        `{"client_id": "0123456789abcdef", "wg_pubkey": "testkey", "timestamp": 123, "signature": "abcd", "key": "1234"}`,
-			shouldError: true, // CBOR unmarshalling will fail
+			name: "ignores legacy signature and key fields",
+			json: `{"client_id": "0123456789abcdef", "wg_pubkey": "testkey", "signature": "not-hex", "key": "not-hex"}`,
+			// signature/key are no longer part of the request; they are ignored.
+			shouldError: false,
 		},
 	}
 
@@ -225,29 +228,23 @@ func TestWGBaseRequestParseFields(t *testing.T) {
 		{
 			name: "invalid client_id hex",
 			req: WGBaseRequest{
-				ClientID:  "not-valid-hex",
-				Signature: "abcd",
-				Key:       "1234",
+				ClientID: "not-valid-hex",
 			},
 			shouldError: true,
 		},
 		{
-			name: "invalid signature hex",
+			name: "valid client_id hex",
 			req: WGBaseRequest{
-				ClientID:  "0123456789abcdef",
-				Signature: "not-valid-hex",
-				Key:       "1234",
+				ClientID: "0123456789abcdef",
 			},
-			shouldError: true,
+			shouldError: false,
 		},
 		{
-			name: "invalid key hex",
+			name: "empty client_id",
 			req: WGBaseRequest{
-				ClientID:  "0123456789abcdef",
-				Signature: "abcd",
-				Key:       "not-valid-hex",
+				ClientID: "",
 			},
-			shouldError: true,
+			shouldError: false,
 		},
 	}
 

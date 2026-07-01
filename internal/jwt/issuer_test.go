@@ -29,42 +29,16 @@ import (
 )
 
 // generateTestEd25519Key creates a test Ed25519 private key PEM file
-// and returns the path to the file
+// and returns the path to the file along with the corresponding public key.
 func generateTestEd25519Key(t *testing.T) (string, ed25519.PublicKey) {
 	t.Helper()
 
-	// Generate Ed25519 key pair
 	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		t.Fatalf("failed to generate Ed25519 key: %v", err)
 	}
 
-	// Marshal private key to PKCS8 format
-	privKeyBytes, err := x509.MarshalPKCS8PrivateKey(privKey)
-	if err != nil {
-		t.Fatalf("failed to marshal private key: %v", err)
-	}
-
-	// Create PEM block
-	pemBlock := &pem.Block{
-		Type:  "PRIVATE KEY",
-		Bytes: privKeyBytes,
-	}
-
-	// Write to temp file
-	tmpDir := t.TempDir()
-	keyPath := filepath.Join(tmpDir, "ed25519.key")
-	keyFile, err := os.Create(keyPath)
-	if err != nil {
-		t.Fatalf("failed to create key file: %v", err)
-	}
-	defer func() { _ = keyFile.Close() }()
-
-	if err := pem.Encode(keyFile, pemBlock); err != nil {
-		t.Fatalf("failed to write PEM data: %v", err)
-	}
-
-	return keyPath, pubKey
+	return writeTestKeyFile(t, privKey), pubKey
 }
 
 func TestNewIssuerWithValidKey(t *testing.T) {
@@ -315,5 +289,233 @@ func TestIssuePeerJWTExpiry(t *testing.T) {
 			expectedDuration,
 			expiryDuration,
 		)
+	}
+}
+
+// writeTestKeyFile marshals an Ed25519 private key to a PKCS8 PEM file and
+// returns its path.
+func writeTestKeyFile(t *testing.T, privKey ed25519.PrivateKey) string {
+	t.Helper()
+	privKeyBytes, err := x509.MarshalPKCS8PrivateKey(privKey)
+	if err != nil {
+		t.Fatalf("failed to marshal private key: %v", err)
+	}
+	keyPath := filepath.Join(t.TempDir(), "ed25519.key")
+	keyFile, err := os.Create(keyPath)
+	if err != nil {
+		t.Fatalf("failed to create key file: %v", err)
+	}
+	defer func() { _ = keyFile.Close() }()
+	if err := pem.Encode(
+		keyFile,
+		&pem.Block{Type: "PRIVATE KEY", Bytes: privKeyBytes},
+	); err != nil {
+		t.Fatalf("failed to write PEM data: %v", err)
+	}
+	return keyPath
+}
+
+func TestSessionJWTRoundTrip(t *testing.T) {
+	keyPath, _ := generateTestEd25519Key(t)
+	issuer, err := NewIssuer(keyPath)
+	if err != nil {
+		t.Fatalf("unexpected error creating issuer: %v", err)
+	}
+
+	clientID := "0123456789abcdef"
+	token, _, err := issuer.IssueSessionJWT(clientID)
+	if err != nil {
+		t.Fatalf("unexpected error issuing session token: %v", err)
+	}
+	if token == "" {
+		t.Fatal("expected non-empty token string")
+	}
+
+	got, err := issuer.VerifySessionJWT(token)
+	if err != nil {
+		t.Fatalf("unexpected error verifying session token: %v", err)
+	}
+	if got != clientID {
+		t.Fatalf("expected client ID %q, got %q", clientID, got)
+	}
+}
+
+func TestSessionJWTHasCorrectClaims(t *testing.T) {
+	keyPath, pubKey := generateTestEd25519Key(t)
+	issuer, err := NewIssuer(keyPath)
+	if err != nil {
+		t.Fatalf("unexpected error creating issuer: %v", err)
+	}
+
+	clientID := "0123456789abcdef"
+	tokenString, expiresAt, err := issuer.IssueSessionJWT(clientID)
+	if err != nil {
+		t.Fatalf("unexpected error issuing session token: %v", err)
+	}
+
+	token, err := jwt.Parse(tokenString, func(_ *jwt.Token) (any, error) {
+		return pubKey, nil
+	})
+	if err != nil {
+		t.Fatalf("failed to parse token: %v", err)
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		t.Fatal("failed to cast claims to MapClaims")
+	}
+
+	if sub, _ := claims["sub"].(string); sub != clientID {
+		t.Fatalf("expected sub %q, got %v", clientID, claims["sub"])
+	}
+	if aud, _ := claims["aud"].(string); aud != sessionAudience {
+		t.Fatalf("expected aud %q, got %v", sessionAudience, claims["aud"])
+	}
+	iat, _ := claims["iat"].(float64)
+	exp, _ := claims["exp"].(float64)
+	if got := int64(exp) - int64(iat); got != int64(SessionJWTLifetime.Seconds()) {
+		t.Fatalf(
+			"expected lifetime %d seconds, got %d",
+			int64(SessionJWTLifetime.Seconds()),
+			got,
+		)
+	}
+	// The returned expiry must exactly match the token's exp claim so the
+	// API's reported expires_at can never disagree with the token.
+	if expiresAt.Unix() != int64(exp) {
+		t.Fatalf(
+			"returned expiry %d does not match exp claim %d",
+			expiresAt.Unix(),
+			int64(exp),
+		)
+	}
+}
+
+func TestVerifySessionJWTRejectsPeerToken(t *testing.T) {
+	keyPath, _ := generateTestEd25519Key(t)
+	issuer, err := NewIssuer(keyPath)
+	if err != nil {
+		t.Fatalf("unexpected error creating issuer: %v", err)
+	}
+
+	// A peer token lacks the "session" audience and must be rejected.
+	peerToken, err := issuer.IssuePeerJWT("somepubkey", "10.8.0.2")
+	if err != nil {
+		t.Fatalf("unexpected error issuing peer token: %v", err)
+	}
+	if _, err := issuer.VerifySessionJWT(peerToken); err == nil {
+		t.Fatal("expected peer token to be rejected as a session token")
+	}
+}
+
+func TestVerifySessionJWTRejectsExpired(t *testing.T) {
+	_, privKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("failed to generate key: %v", err)
+	}
+	issuer, err := NewIssuer(writeTestKeyFile(t, privKey))
+	if err != nil {
+		t.Fatalf("unexpected error creating issuer: %v", err)
+	}
+
+	// Craft an already-expired session token signed by the issuer's key.
+	now := time.Now()
+	claims := jwt.MapClaims{
+		"sub": "0123456789abcdef",
+		"aud": sessionAudience,
+		"iat": now.Add(-2 * time.Hour).Unix(),
+		"exp": now.Add(-1 * time.Hour).Unix(),
+	}
+	expired, err := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims).
+		SignedString(privKey)
+	if err != nil {
+		t.Fatalf("failed to sign expired token: %v", err)
+	}
+
+	if _, err := issuer.VerifySessionJWT(expired); err == nil {
+		t.Fatal("expected expired session token to be rejected")
+	}
+}
+
+func TestVerifySessionJWTRejectsMissingExp(t *testing.T) {
+	_, privKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("failed to generate key: %v", err)
+	}
+	issuer, err := NewIssuer(writeTestKeyFile(t, privKey))
+	if err != nil {
+		t.Fatalf("unexpected error creating issuer: %v", err)
+	}
+
+	// A token without an exp claim must be rejected (no non-expiring tokens).
+	claims := jwt.MapClaims{
+		"sub": "0123456789abcdef",
+		"aud": sessionAudience,
+		"iat": time.Now().Unix(),
+	}
+	noExp, err := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims).
+		SignedString(privKey)
+	if err != nil {
+		t.Fatalf("failed to sign token: %v", err)
+	}
+
+	if _, err := issuer.VerifySessionJWT(noExp); err == nil {
+		t.Fatal("expected session token without exp to be rejected")
+	}
+}
+
+func TestVerifySessionJWTRejectsMissingIssuedAt(t *testing.T) {
+	_, privKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("failed to generate key: %v", err)
+	}
+	issuer, err := NewIssuer(writeTestKeyFile(t, privKey))
+	if err != nil {
+		t.Fatalf("unexpected error creating issuer: %v", err)
+	}
+
+	// A token without an iat claim must be rejected.
+	claims := jwt.MapClaims{
+		"sub": "0123456789abcdef",
+		"aud": sessionAudience,
+		"exp": time.Now().Add(SessionJWTLifetime).Unix(),
+	}
+	noIat, err := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims).
+		SignedString(privKey)
+	if err != nil {
+		t.Fatalf("failed to sign token: %v", err)
+	}
+
+	if _, err := issuer.VerifySessionJWT(noIat); err == nil {
+		t.Fatal("expected session token without iat to be rejected")
+	}
+}
+
+func TestVerifySessionJWTRejectsWrongKey(t *testing.T) {
+	keyPath, _ := generateTestEd25519Key(t)
+	issuer, err := NewIssuer(keyPath)
+	if err != nil {
+		t.Fatalf("unexpected error creating issuer: %v", err)
+	}
+
+	// Sign a valid-looking session token with a different key.
+	_, otherPriv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("failed to generate key: %v", err)
+	}
+	now := time.Now()
+	claims := jwt.MapClaims{
+		"sub": "0123456789abcdef",
+		"aud": sessionAudience,
+		"iat": now.Unix(),
+		"exp": now.Add(SessionJWTLifetime).Unix(),
+	}
+	forged, err := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims).
+		SignedString(otherPriv)
+	if err != nil {
+		t.Fatalf("failed to sign token: %v", err)
+	}
+
+	if _, err := issuer.VerifySessionJWT(forged); err == nil {
+		t.Fatal("expected token signed with wrong key to be rejected")
 	}
 }

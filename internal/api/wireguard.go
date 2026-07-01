@@ -16,8 +16,6 @@ package api
 
 import (
 	"context"
-	"crypto/ed25519"
-	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -25,14 +23,11 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"strconv"
 	"time"
 
-	lcommon "github.com/blinklabs-io/gouroboros/ledger/common"
 	"github.com/blinklabs-io/vpn-indexer/internal/client"
 	"github.com/blinklabs-io/vpn-indexer/internal/database"
 	"github.com/blinklabs-io/vpn-indexer/internal/wireguard"
-	"github.com/veraison/go-cose"
 )
 
 const (
@@ -87,45 +82,22 @@ func isValidWGPubkey(pubkey string) bool {
 
 // WGBaseRequest contains the common fields for all WireGuard API requests.
 // This is embedded by specific request types that may add additional fields.
-// Note: Timestamp validation uses the timestamp embedded in the COSE signature
-// payload (clientID + timestamp), not a separate JSON field.
+// Requests are authenticated with a Bearer session token; client_id only names
+// the target subscription.
 type WGBaseRequest struct {
-	ClientID  string `json:"client_id"`
-	Signature string `json:"signature"`
-	Key       string `json:"key"`
-	// Parsed representations (not serialized)
-	innerClientID  []byte
-	innerSignature cose.UntaggedSign1Message
-	innerKey       cose.Key
+	ClientID string `json:"client_id"`
+	// Parsed representation (not serialized)
+	innerClientID []byte
 }
 
-// parseBaseFields parses and validates the hex-encoded fields
+// parseBaseFields decodes the hex-encoded client ID that names the target
+// subscription.
 func (r *WGBaseRequest) parseBaseFields() error {
-	// Client ID
-	tmpId, err := hex.DecodeString(r.ClientID)
+	id, err := hex.DecodeString(r.ClientID)
 	if err != nil {
 		return errors.New("decode client ID hex")
 	}
-	r.innerClientID = tmpId
-
-	// Signature
-	sigBytes, err := hex.DecodeString(r.Signature)
-	if err != nil {
-		return errors.New("decode signature hex")
-	}
-	if err := r.innerSignature.UnmarshalCBOR(sigBytes); err != nil {
-		return fmt.Errorf("decode signature: %w", err)
-	}
-
-	// Key
-	keyBytes, err := hex.DecodeString(r.Key)
-	if err != nil {
-		return errors.New("decode key hex")
-	}
-	if err := r.innerKey.UnmarshalCBOR(keyBytes); err != nil {
-		return fmt.Errorf("decode key: %w", err)
-	}
-
+	r.innerClientID = id
 	return nil
 }
 
@@ -143,7 +115,7 @@ PersistentKeepalive = 25
 `
 
 // WGRegisterRequest is the request body for WireGuard device registration.
-// Embeds WGBaseRequest for common authentication fields.
+// Embeds WGBaseRequest for the target client_id.
 type WGRegisterRequest struct {
 	WGBaseRequest
 	WGPubkey string `json:"wg_pubkey"`
@@ -169,7 +141,7 @@ type WGRegisterResponse struct {
 }
 
 // WGProfileRequest is the request body for WireGuard profile generation.
-// Embeds WGBaseRequest for common authentication fields.
+// Embeds WGBaseRequest for the target client_id.
 type WGProfileRequest struct {
 	WGBaseRequest
 	WGPubkey string `json:"wg_pubkey"`
@@ -186,7 +158,7 @@ func (r *WGProfileRequest) UnmarshalJSON(data []byte) error {
 }
 
 // WGDeleteRequest is the request body for WireGuard device deletion.
-// Embeds WGBaseRequest for common authentication fields.
+// Embeds WGBaseRequest for the target client_id.
 type WGDeleteRequest struct {
 	WGBaseRequest
 	WGPubkey string `json:"wg_pubkey"`
@@ -209,7 +181,7 @@ type WGDeleteResponse struct {
 }
 
 // WGDevicesRequest is the request body for listing WireGuard devices.
-// Only uses the base authentication fields, no additional fields needed.
+// Only needs the base client_id field.
 type WGDevicesRequest struct {
 	WGBaseRequest
 }
@@ -252,81 +224,6 @@ func writeErrorResponse(w http.ResponseWriter, status int, err, reason string) {
 	_, _ = w.Write(data)
 }
 
-// verifyCOSESignature verifies a COSE signature and validates the credential.
-// Returns the database client if successful.
-func (a *Api) verifyCOSESignature(
-	clientID string,
-	innerClientID []byte,
-	innerSignature *cose.UntaggedSign1Message,
-	innerKey *cose.Key,
-) (*database.Client, error) {
-	// Lookup client in database
-	tmpClient, err := a.db.ClientByAssetName(innerClientID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to lookup client: %w", err)
-	}
-
-	// Verify challenge string meets requirements
-	// Payload must contain at least clientID + 1 digit for timestamp
-	if len(innerSignature.Payload) < len(clientID)+1 {
-		return nil, errors.New(
-			"challenge payload too short: must contain client ID and timestamp",
-		)
-	}
-	challengeClientId := string(innerSignature.Payload[0:len(clientID)])
-	if challengeClientId != clientID {
-		return nil, errors.New("challenge string does not match client ID")
-	}
-	challengeTimestamp := string(
-		innerSignature.Payload[len(challengeClientId):],
-	)
-	tmpTimestamp, err := strconv.ParseInt(challengeTimestamp, 10, 64)
-	if err != nil {
-		return nil, errors.New(
-			"could not extract timestamp from challenge string",
-		)
-	}
-	timestamp := time.Unix(tmpTimestamp, 0)
-	age := time.Since(timestamp)
-	// Reject timestamps too far in the future (negative age beyond skew window)
-	// to prevent replay attacks while allowing small clock differences
-	if age < -TimestampFutureSkewWindow {
-		return nil, errors.New(
-			"challenge string timestamp is too far in the future",
-		)
-	}
-	if age > TimestampValidityWindow {
-		return nil, errors.New("challenge string timestamp is too old")
-	}
-
-	// Verify challenge signature
-	vkey, err := innerKey.PublicKey()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get public key: %w", err)
-	}
-	verifier, err := cose.NewVerifier(cose.AlgorithmEdDSA, vkey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create verifier: %w", err)
-	}
-	if err := innerSignature.Verify(nil, verifier); err != nil {
-		return nil, errors.New("failed to validate signature")
-	}
-
-	// Check that signing key matches known client credential
-	ed25519Key, ok := vkey.(ed25519.PublicKey)
-	if !ok {
-		return nil, errors.New("public key is not Ed25519")
-	}
-	vkeyHash := lcommon.Blake2b224Hash([]byte(ed25519Key))
-	if subtle.ConstantTimeCompare(vkeyHash.Bytes(), tmpClient.Credential) != 1 {
-		return nil, errors.New(
-			"key hash does not match credential for client",
-		)
-	}
-
-	return &tmpClient, nil
-}
-
 // wgRegisterImpl handles POST /api/client/wg-register
 //
 //	@Summary		WGRegister
@@ -340,6 +237,7 @@ func (a *Api) verifyCOSESignature(
 //	@Failure		403					{object}	ErrorResponse		"Forbidden (device limit reached or subscription expired)"
 //	@Failure		405					{object}	string				"Method Not Allowed"
 //	@Failure		500					{object}	ErrorResponse		"Server Error"
+//	@Security		BearerAuth
 //	@Router			/api/client/wg-register [post]
 func (a *Api) wgRegisterImpl(
 	w http.ResponseWriter,
@@ -384,20 +282,15 @@ func (a *Api) wgRegisterImpl(
 		return
 	}
 
-	// Verify COSE signature
-	tmpClient, err := a.verifyCOSESignature(
-		req.ClientID,
-		req.innerClientID,
-		&req.innerSignature,
-		&req.innerKey,
-	)
+	// Authenticate via session token
+	tmpClient, err := a.authenticate(r, req.innerClientID)
 	if err != nil {
-		slog.Error("COSE verification failed", "error", err)
+		slog.Error("authentication failed", "error", err)
 		writeErrorResponse(
 			w,
 			http.StatusUnauthorized,
 			"Unauthorized",
-			"signature verification failed",
+			"authentication failed",
 		)
 		return
 	}
@@ -588,6 +481,7 @@ func (a *Api) wgRegisterImpl(
 //	@Failure		404					{object}	ErrorResponse		"Not Found"
 //	@Failure		405					{object}	string				"Method Not Allowed"
 //	@Failure		500					{object}	ErrorResponse		"Server Error"
+//	@Security		BearerAuth
 //	@Router			/api/client/wg-profile [post]
 func (a *Api) wgProfileImpl(
 	w http.ResponseWriter,
@@ -630,20 +524,15 @@ func (a *Api) wgProfileImpl(
 		return
 	}
 
-	// Verify COSE signature
-	tmpClient, err := a.verifyCOSESignature(
-		req.ClientID,
-		req.innerClientID,
-		&req.innerSignature,
-		&req.innerKey,
-	)
+	// Authenticate via session token
+	tmpClient, err := a.authenticate(r, req.innerClientID)
 	if err != nil {
-		slog.Error("COSE verification failed", "error", err)
+		slog.Error("authentication failed", "error", err)
 		writeErrorResponse(
 			w,
 			http.StatusUnauthorized,
 			"Unauthorized",
-			"signature verification failed",
+			"authentication failed",
 		)
 		return
 	}
@@ -748,6 +637,7 @@ func (a *Api) wgProfileImpl(
 //	@Failure		404				{object}	ErrorResponse		"Not Found"
 //	@Failure		405				{object}	string				"Method Not Allowed"
 //	@Failure		500				{object}	ErrorResponse		"Server Error"
+//	@Security		BearerAuth
 //	@Router			/api/client/wg-peer [delete]
 func (a *Api) wgPeerDeleteImpl(
 	w http.ResponseWriter,
@@ -792,20 +682,23 @@ func (a *Api) wgPeerDeleteImpl(
 		return
 	}
 
-	// Verify COSE signature
-	_, err := a.verifyCOSESignature(
-		req.ClientID,
-		req.innerClientID,
-		&req.innerSignature,
-		&req.innerKey,
-	)
+	// Authenticate via session token
+	tmpClient, err := a.authenticate(r, req.innerClientID)
 	if err != nil {
-		slog.Error("COSE verification failed", "error", err)
+		slog.Error("authentication failed", "error", err)
 		writeErrorResponse(
 			w,
 			http.StatusUnauthorized,
 			"Unauthorized",
-			"signature verification failed",
+			"authentication failed",
+		)
+		return
+	}
+
+	// Check subscription not expired
+	if time.Now().After(tmpClient.Expiration) {
+		writeErrorResponse(
+			w, http.StatusForbidden, "Forbidden", "subscription has expired",
 		)
 		return
 	}
@@ -935,6 +828,7 @@ func (a *Api) wgPeerDeleteImpl(
 //	@Failure		401					{object}	ErrorResponse		"Unauthorized"
 //	@Failure		405					{object}	string				"Method Not Allowed"
 //	@Failure		500					{object}	ErrorResponse		"Server Error"
+//	@Security		BearerAuth
 //	@Router			/api/client/wg-devices [post]
 func (a *Api) wgDevicesImpl(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -954,20 +848,23 @@ func (a *Api) wgDevicesImpl(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify COSE signature
-	_, err := a.verifyCOSESignature(
-		req.ClientID,
-		req.innerClientID,
-		&req.innerSignature,
-		&req.innerKey,
-	)
+	// Authenticate via session token
+	tmpClient, err := a.authenticate(r, req.innerClientID)
 	if err != nil {
-		slog.Error("COSE verification failed", "error", err)
+		slog.Error("authentication failed", "error", err)
 		writeErrorResponse(
 			w,
 			http.StatusUnauthorized,
 			"Unauthorized",
-			"signature verification failed",
+			"authentication failed",
+		)
+		return
+	}
+
+	// Check subscription not expired
+	if time.Now().After(tmpClient.Expiration) {
+		writeErrorResponse(
+			w, http.StatusForbidden, "Forbidden", "subscription has expired",
 		)
 		return
 	}
