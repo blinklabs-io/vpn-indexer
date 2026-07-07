@@ -180,7 +180,7 @@ func (i *Indexer) Start(
 	// Configure pipeline filters
 	// We only care about transaction events
 	filterEvent := filter_event.New(
-		filter_event.WithTypes([]string{"chainsync.transaction"}),
+		filter_event.WithTypes([]string{"input.transaction"}),
 	)
 	i.pipeline.AddFilter(filterEvent)
 	// We only care about transactions involving our script address
