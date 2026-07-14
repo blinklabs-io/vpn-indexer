@@ -1,6 +1,6 @@
 module github.com/blinklabs-io/vpn-indexer
 
-go 1.25.8
+go 1.26.0
 
 require (
 	github.com/Salvionied/apollo v1.8.0
