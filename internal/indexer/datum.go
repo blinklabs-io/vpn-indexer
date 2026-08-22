@@ -28,16 +28,16 @@ type ClientDatum struct {
 }
 
 func (d *ClientDatum) UnmarshalCBOR(data []byte) error {
-	var tmpConstr cbor.Constructor
+	var tmpConstr cbor.ConstructorDecoder
 	if _, err := cbor.Decode(data, &tmpConstr); err != nil {
 		return err
 	}
-	if tmpConstr.Constructor() != 1 {
+	if tmpConstr.Tag() != 1 {
 		return errors.New("invalid constructor")
 	}
 	type tClientDatum ClientDatum
 	var tmp tClientDatum
-	if _, err := cbor.Decode(tmpConstr.FieldsCbor(), &tmp); err != nil {
+	if _, err := cbor.Decode(tmpConstr.Fields(), &tmp); err != nil {
 		return err
 	}
 	*d = ClientDatum(tmp)
@@ -51,16 +51,16 @@ type ReferenceDatum struct {
 }
 
 func (d *ReferenceDatum) UnmarshalCBOR(data []byte) error {
-	var tmpConstr cbor.Constructor
+	var tmpConstr cbor.ConstructorDecoder
 	if _, err := cbor.Decode(data, &tmpConstr); err != nil {
 		return err
 	}
-	if tmpConstr.Constructor() != 0 {
+	if tmpConstr.Tag() != 0 {
 		return errors.New("invalid constructor")
 	}
 	type tReferenceDatum ReferenceDatum
 	var tmp tReferenceDatum
-	if _, err := cbor.Decode(tmpConstr.FieldsCbor(), &tmp); err != nil {
+	if _, err := cbor.Decode(tmpConstr.Fields(), &tmp); err != nil {
 		return err
 	}
 	*d = ReferenceDatum(tmp)
@@ -74,16 +74,16 @@ type ReferenceDatumPricing struct {
 }
 
 func (p *ReferenceDatumPricing) UnmarshalCBOR(data []byte) error {
-	var tmpConstr cbor.Constructor
+	var tmpConstr cbor.ConstructorDecoder
 	if _, err := cbor.Decode(data, &tmpConstr); err != nil {
 		return err
 	}
-	if tmpConstr.Constructor() != 0 {
+	if tmpConstr.Tag() != 0 {
 		return errors.New("invalid constructor")
 	}
 	type tReferenceDatumPricing ReferenceDatumPricing
 	var tmp tReferenceDatumPricing
-	if _, err := cbor.Decode(tmpConstr.FieldsCbor(), &tmp); err != nil {
+	if _, err := cbor.Decode(tmpConstr.Fields(), &tmp); err != nil {
 		return err
 	}
 	*p = ReferenceDatumPricing(tmp)

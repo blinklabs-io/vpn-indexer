@@ -23,10 +23,6 @@ definitions:
     properties:
       id:
         type: string
-      key:
-        type: string
-      signature:
-        type: string
     type: object
   api.ErrorResponse:
     properties:
@@ -52,6 +48,23 @@ definitions:
         type: integer
       price:
         type: integer
+    type: object
+  api.SessionRequest:
+    properties:
+      key:
+        type: string
+      signature:
+        type: string
+    required:
+    - key
+    - signature
+    type: object
+  api.SessionResponse:
+    properties:
+      expires_at:
+        type: integer
+      token:
+        type: string
     type: object
   api.TxRenewRequest:
     properties:
@@ -109,10 +122,6 @@ definitions:
     properties:
       client_id:
         type: string
-      key:
-        type: string
-      signature:
-        type: string
       wg_pubkey:
         type: string
     type: object
@@ -136,10 +145,6 @@ definitions:
     properties:
       client_id:
         type: string
-      key:
-        type: string
-      signature:
-        type: string
     type: object
   api.WGDevicesResponse:
     properties:
@@ -154,20 +159,12 @@ definitions:
     properties:
       client_id:
         type: string
-      key:
-        type: string
-      signature:
-        type: string
       wg_pubkey:
         type: string
     type: object
   api.WGRegisterRequest:
     properties:
       client_id:
-        type: string
-      key:
-        type: string
-      signature:
         type: string
       wg_pubkey:
         type: string
@@ -195,6 +192,47 @@ info:
   title: vpn-indexer
   version: v0
 paths:
+  /api/auth/session:
+    post:
+      consumes:
+      - application/json
+      description: Exchange a wallet-signed challenge for a short-lived session token
+        covering all of the wallet's subscriptions
+      parameters:
+      - description: Session Request
+        in: body
+        name: SessionRequest
+        required: true
+        schema:
+          $ref: '#/definitions/api.SessionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Session token
+          schema:
+            $ref: '#/definitions/api.SessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "403":
+          description: Forbidden (no subscriptions for wallet)
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "405":
+          description: Method Not Allowed
+          schema:
+            type: string
+        "500":
+          description: Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: AuthSession
   /api/client/available:
     post:
       consumes:
@@ -263,7 +301,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Fetch a client VPN profile given a COSE payload via signed S3 link
+      description: Fetch a client VPN profile via a signed S3 link; authenticate with
+        a session Bearer token and provide the subscription id in the body
       parameters:
       - description: Profile Request
         in: body
@@ -280,6 +319,14 @@ paths:
           description: Bad Request
           schema:
             type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "403":
+          description: Forbidden
+          schema:
+            type: string
         "405":
           description: Method Not Allowed
           schema:
@@ -288,6 +335,8 @@ paths:
           description: Server Error
           schema:
             type: string
+      security:
+      - BearerAuth: []
       summary: ClientProfile
   /api/client/wg-devices:
     post:
@@ -324,6 +373,8 @@ paths:
           description: Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: WGDevices
   /api/client/wg-peer:
     delete:
@@ -368,6 +419,8 @@ paths:
           description: Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: WGPeerDelete
   /api/client/wg-profile:
     post:
@@ -413,6 +466,8 @@ paths:
           description: Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: WGProfile
   /api/client/wg-register:
     post:
@@ -454,6 +509,8 @@ paths:
           description: Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: WGRegister
   /api/refdata:
     get:
@@ -609,4 +666,10 @@ paths:
           schema:
             type: string
       summary: TxTransfer
+securityDefinitions:
+  BearerAuth:
+    description: Session token from POST /api/auth/session, sent as "Bearer <token>".
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

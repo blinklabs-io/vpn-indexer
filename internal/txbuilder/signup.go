@@ -181,7 +181,7 @@ func BuildSignupTx(
 	clientDatum := PlutusData.PlutusData{
 		PlutusDataType: PlutusData.PlutusBytes,
 		TagNr:          0,
-		Value: cbor.NewConstructor(
+		Value: cbor.NewConstructorEncoder(
 			1,
 			cbor.IndefLengthList{
 				ownerCredential,
@@ -203,13 +203,13 @@ func BuildSignupTx(
 		Data: PlutusData.PlutusData{
 			PlutusDataType: PlutusData.PlutusBytes,
 			TagNr:          0,
-			Value: cbor.NewConstructor(
+			Value: cbor.NewConstructorEncoder(
 				0,
 				cbor.IndefLengthList{
 					ownerCredential,
 					[]byte(region),
 					selectionId,
-					cbor.NewConstructor(
+					cbor.NewConstructorEncoder(
 						0,
 						cbor.IndefLengthList{
 							inputUtxos[0].Input.TransactionId,

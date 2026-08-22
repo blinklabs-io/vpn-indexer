@@ -141,7 +141,7 @@ func chooseInputUtxos(
 func clientIdFromInput(
 	input TransactionInput.TransactionInput,
 ) ([]byte, error) {
-	tmpData := cbor.NewConstructor(
+	tmpData := cbor.NewConstructorEncoder(
 		0,
 		cbor.IndefLengthList{
 			input.TransactionId,
