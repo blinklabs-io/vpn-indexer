@@ -185,17 +185,17 @@ func (c *Ca) GenerateClientCert(clientName string) (*ClientCert, error) {
 }
 
 func (c *Ca) GenerateCRL(
-	revokedCerts []pkix.RevokedCertificate,
+	revokedCerts []x509.RevocationListEntry,
 	issuedTime time.Time,
 	expireTime time.Time,
 ) ([]byte, error) {
 	crlBytes, err := x509.CreateRevocationList(
 		rand.Reader,
 		&x509.RevocationList{
-			Number:              big.NewInt(issuedTime.UnixNano()),
-			RevokedCertificates: revokedCerts,
-			ThisUpdate:          issuedTime,
-			NextUpdate:          expireTime,
+			Number:                    big.NewInt(issuedTime.UnixNano()),
+			RevokedCertificateEntries: revokedCerts,
+			ThisUpdate:                issuedTime,
+			NextUpdate:                expireTime,
 		},
 		c.caCert,
 		c.caKey,
