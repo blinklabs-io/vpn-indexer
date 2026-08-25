@@ -16,7 +16,6 @@ package ca
 
 import (
 	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/hex"
 	"encoding/pem"
 	"math/big"
@@ -208,7 +207,7 @@ func TestCaCreateClientEncKey(t *testing.T) {
 }
 
 func TestCaGenerateCRL(t *testing.T) {
-	testRevokedCerts := []pkix.RevokedCertificate{
+	testRevokedCerts := []x509.RevocationListEntry{
 		{
 			SerialNumber:   big.NewInt(123456789),
 			RevocationTime: time.Date(2025, 6, 5, 12, 34, 56, 0, time.UTC),

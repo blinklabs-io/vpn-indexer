@@ -16,7 +16,7 @@ package crl
 
 import (
 	"context"
-	"crypto/x509/pkix"
+	"crypto/x509"
 	"encoding/hex"
 	"fmt"
 	"log/slog"
@@ -143,7 +143,7 @@ func (c *Crl) scheduleUpdateConfigMap() {
 
 func (c *Crl) updateConfigMap() error {
 	// Build our revoked cert list from client expirations and manual list from config
-	var revokedCerts []pkix.RevokedCertificate
+	var revokedCerts []x509.RevocationListEntry
 	for _, serial := range c.config.Crl.RevokeSerials {
 		serialBytes, err := hex.DecodeString(serial)
 		if err != nil {
@@ -151,7 +151,7 @@ func (c *Crl) updateConfigMap() error {
 		}
 		revokedCerts = append(
 			revokedCerts,
-			pkix.RevokedCertificate{
+			x509.RevocationListEntry{
 				SerialNumber:   new(big.Int).SetBytes(serialBytes),
 				RevocationTime: c.config.Crl.RevokeTime,
 			},
@@ -164,7 +164,7 @@ func (c *Crl) updateConfigMap() error {
 	for _, client := range expiredClients {
 		revokedCerts = append(
 			revokedCerts,
-			pkix.RevokedCertificate{
+			x509.RevocationListEntry{
 				SerialNumber: ca.ClientNameToSerialNumber(
 					hex.EncodeToString(client.AssetName),
 				),
