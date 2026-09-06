@@ -6,10 +6,10 @@ require (
 	github.com/Salvionied/apollo v1.8.2
 	github.com/SundaeSwap-finance/kugo v1.3.1
 	github.com/SundaeSwap-finance/ogmigo/v6 v6.2.1
-	github.com/aws/aws-sdk-go-v2 v1.41.6
+	github.com/aws/aws-sdk-go-v2 v1.45.1
 	github.com/aws/aws-sdk-go-v2/config v1.32.14
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.99.0
-	github.com/aws/smithy-go v1.25.1
+	github.com/aws/smithy-go v1.28.1
 	github.com/blinklabs-io/adder v0.43.1
 	github.com/blinklabs-io/gouroboros v0.194.0
 	github.com/glebarez/sqlite v1.11.0
