@@ -3,7 +3,7 @@ module github.com/blinklabs-io/vpn-indexer
 go 1.26.0
 
 require (
-	github.com/Salvionied/apollo v1.8.0
+	github.com/Salvionied/apollo v1.8.2
 	github.com/SundaeSwap-finance/kugo v1.3.1
 	github.com/SundaeSwap-finance/ogmigo/v6 v6.2.1
 	github.com/aws/aws-sdk-go-v2 v1.41.6
