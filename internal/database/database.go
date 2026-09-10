@@ -59,8 +59,13 @@ func New(cfg *config.Config, logger *slog.Logger) (*Database, error) {
 		dataDir,
 		"vpn-indexer.sqlite",
 	)
-	// WAL journal mode
-	connOpts := "_pragma=journal_mode(WAL)"
+	// WAL journal mode. Combined with synchronous=NORMAL (safe under WAL: an
+	// OS crash can lose the most recent commits but never corrupts the DB),
+	// this avoids an fsync on every single write. That matters a lot during
+	// initial chain sync, where we persist a chainsync cursor update for
+	// every block processed (see AddCursorPoint) - with the default
+	// synchronous=FULL, each of those was a blocking disk sync.
+	connOpts := "_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)"
 	db, err := gorm.Open(
 		sqlite.Open(
 			fmt.Sprintf("file:%s?%s", dbPath, connOpts),
