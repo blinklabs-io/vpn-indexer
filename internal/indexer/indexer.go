@@ -107,8 +107,6 @@ func (i *Indexer) Start(
 	// Configure pipeline input
 	inputOpts := []input_chainsync.ChainSyncOptionFunc{
 		input_chainsync.WithStatusUpdateFunc(i.updateStatus),
-		// TODO: re-enable this after https://github.com/blinklabs-io/adder/issues/412 is fixed
-		// input_chainsync.WithBulkMode(true),
 		input_chainsync.WithAutoReconnect(true),
 		input_chainsync.WithLogger(logger),
 		input_chainsync.WithDelayConfirmations(cfg.Indexer.DelayConfirmations),
