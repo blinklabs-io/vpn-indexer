@@ -127,8 +127,16 @@ func (d *Database) AllocateIP(region string) (string, error) {
 	}
 
 	err := d.db.Transaction(func(tx *gorm.DB) error {
-		// Get or create the IP pool for this region
-		// Use SELECT ... FOR UPDATE to serialize concurrent allocations
+		// Get or create the IP pool for this region.
+		// The clause.Locking{Strength: "UPDATE"} below is a no-op on
+		// SQLite (its gorm dialector silently drops "FOR UPDATE" clauses,
+		// since SQLite has no row-level locking), so it does not actually
+		// serialize concurrent allocations by itself. Serialization here
+		// instead relies on the database connection pool being limited to
+		// a single connection (see database.New), which forces all
+		// callers, across every goroutine, through this transaction one
+		// at a time. The clause is kept for documentation/portability in
+		// case this ever runs against a database that does support it.
 		var pool WGIPPool
 		result := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where("region = ?", region).
