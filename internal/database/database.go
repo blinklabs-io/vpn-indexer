@@ -65,7 +65,15 @@ func New(cfg *config.Config, logger *slog.Logger) (*Database, error) {
 	// initial chain sync, where we persist a chainsync cursor update for
 	// every block processed (see AddCursorPoint) - with the default
 	// synchronous=FULL, each of those was a blocking disk sync.
-	connOpts := "_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)"
+	//
+	// Also set a busy timeout (beyond the driver's own 5s default) so that
+	// any brief lock contention from an external process (e.g. an sqlite3
+	// shell or a backup job opening the same file) causes SQLite to retry
+	// internally rather than immediately failing with SQLITE_BUSY
+	// ("database is locked"). Kept well under typical HTTP client/proxy
+	// timeouts so a locked DB still fails an API request in bounded time
+	// rather than hanging it.
+	connOpts := "_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=busy_timeout(10000)"
 	db, err := gorm.Open(
 		sqlite.Open(
 			fmt.Sprintf("file:%s?%s", dbPath, connOpts),
@@ -77,6 +85,28 @@ func New(cfg *config.Config, logger *slog.Logger) (*Database, error) {
 	if err != nil {
 		return nil, err
 	}
+	// SQLite only allows a single writer at a time. gorm/database-sql will
+	// happily hand out multiple concurrent connections from Go's
+	// connection pool, and several parts of this app write to the DB from
+	// separate goroutines (chain indexer, HTTP API handlers, WireGuard
+	// peer expiry ticker). A transaction that reads a row and later writes
+	// it (see AllocateIP) can't rely on SQLite row/table locking to
+	// serialize those writers, since SQLite has no such thing (its
+	// gorm dialector silently drops "SELECT ... FOR UPDATE" clauses). Left
+	// unbounded, concurrent writers race and can surface as either
+	// "database is locked (SQLITE_BUSY)" errors (if contention outlasts
+	// busy_timeout) or as silent data races (e.g. two requests computing
+	// the same "next" IP address). Limiting the pool to a single
+	// connection forces Go's database/sql to serialize all access itself,
+	// which removes the internal contention entirely; only pragma
+	// busy_timeout is left to help beyond that against outside processes,
+	// like a `sqlite3` shell or backup script, momentarily opening the
+	// same file.
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
+	}
+	sqlDB.SetMaxOpenConns(1)
 	d := &Database{
 		config: cfg,
 		db:     db,
