@@ -194,14 +194,17 @@ jobs:
             type=semver,pattern={{version}}
       - name: manifest-create
         shell: bash
+        env:
+          IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
         run: |
-          for t in `echo '${{ steps.meta.outputs.tags }}'`; do
-            # Extract the underlying manifests from each manifests list and create a new single manifest list
-            docker manifest create ${t} \
-              $(docker manifest inspect ${t}-amd64 | jq -r '.manifests[] | .digest' | sed -e "s|^|${t%:*}@|") \
-              $(docker manifest inspect ${t}-arm64 | jq -r '.manifests[] | .digest' | sed -e "s|^|${t%:*}@|")
-            docker manifest push ${t}
-          done
+          set -euo pipefail
+          while IFS= read -r image_tag; do
+            [ -n "$image_tag" ] || continue
+            docker buildx imagetools create \
+              --tag "$image_tag" \
+              "${image_tag}-amd64" \
+              "${image_tag}-arm64"
+          done <<< "$IMAGE_TAGS"
       # Checkout repo so README.md is available for next step
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 https://github.com/actions/checkout/releases/tag/v7.0.1
       # Update Docker Hub from README
