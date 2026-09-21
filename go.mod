@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.47.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.14
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.113.1
-	github.com/aws/smithy-go v1.28.1
+	github.com/aws/smithy-go v1.28.2
 	github.com/blinklabs-io/adder v0.44.0
 	github.com/blinklabs-io/gouroboros v0.204.1
 	github.com/glebarez/sqlite v1.11.0
