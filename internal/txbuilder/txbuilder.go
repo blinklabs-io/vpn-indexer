@@ -85,7 +85,7 @@ func ogmiosSystemStart(ogmios *ogmigo.Client) (time.Time, error) {
 	if err := json.Unmarshal(genesisConfigRaw, &tmpGenesisConfig); err != nil {
 		return *systemStart, err
 	}
-	systemStart = &(tmpGenesisConfig.StartTime)
+	systemStart = &tmpGenesisConfig.StartTime
 	return *systemStart, nil
 }
 
