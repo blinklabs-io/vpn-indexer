@@ -235,7 +235,6 @@ func (d *Database) AllocateIP(region string) (string, error) {
 		allocatedIP = fmt.Sprintf("%s.%d", subnet, currentIP)
 		return nil
 	})
-
 	if err != nil {
 		return "", err
 	}

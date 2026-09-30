@@ -162,7 +162,7 @@ var globalConfig = &Config{
 	Crl: CrlConfig{
 		UpdateInterval: 60 * time.Minute,
 		// The actual doesn't matter, but we want a consistent value for any custom revoked certs
-		RevokeTime: time.Date(2025, 06, 11, 15, 45, 03, 0, time.UTC),
+		RevokeTime: time.Date(2025, 0o6, 11, 15, 45, 0o3, 0, time.UTC),
 	},
 	Api: ApiConfig{
 		ListenPort: 8080,
