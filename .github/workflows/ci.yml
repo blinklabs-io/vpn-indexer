@@ -1,0 +1,39 @@
+# Generated automatically by org-governance-bot. Do not edit manually.
+name: "CI"
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    tags:
+      - v*.*.*
+
+jobs:
+  go-test:
+    uses: blinklabs-io/actions/.github/workflows/reuseable-go-test.yml@main
+    with:
+      nilaway-include-pkgs: github.com/blinklabs-io/vpn-indexer
+      run-golangci-lint: true
+      run-nilaway: true
+  publish:
+    needs: [go-test]
+    if: github.event_name == 'push'
+    uses: blinklabs-io/actions/.github/workflows/reuseable-publish.yml@main
+    permissions:
+      actions: write
+      attestations: write
+      checks: write
+      contents: write
+      id-token: write
+      packages: write
+      statuses: write
+    secrets:
+      docker-password: ${{ secrets.DOCKER_PASSWORD }}
+    with:
+      additional-binary-names: '["vpn-cli"]'
+      attestation-subject-path: vpn-*
+      binary-name: vpn-indexer
+      binary-target-matrix: '[{"os":"linux","arch":"amd64"},{"os":"linux","arch":"arm64"},{"os":"darwin","arch":"amd64"},{"os":"darwin","arch":"arm64"}]'
+      description: VPN indexer
+      docker-image: blinklabs/vpn-indexer
