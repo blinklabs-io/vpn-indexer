@@ -8,7 +8,7 @@ require (
 	github.com/SundaeSwap-finance/ogmigo/v6 v6.2.1
 	github.com/aws/aws-sdk-go-v2 v1.47.1
 	github.com/aws/aws-sdk-go-v2/config v1.33.5
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.113.4
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.0
 	github.com/aws/smithy-go v1.28.2
 	github.com/blinklabs-io/adder v0.45.0
 	github.com/blinklabs-io/gouroboros v0.204.1
