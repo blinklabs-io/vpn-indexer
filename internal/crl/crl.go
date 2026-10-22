@@ -162,12 +162,16 @@ func (c *Crl) updateConfigMap() error {
 		return err
 	}
 	for _, client := range expiredClients {
+		serialNumber, err := ca.ClientNameToSerialNumber(
+			hex.EncodeToString(client.AssetName),
+		)
+		if err != nil {
+			return err
+		}
 		revokedCerts = append(
 			revokedCerts,
 			x509.RevocationListEntry{
-				SerialNumber: ca.ClientNameToSerialNumber(
-					hex.EncodeToString(client.AssetName),
-				),
+				SerialNumber:   serialNumber,
 				RevocationTime: client.Expiration,
 			},
 		)
