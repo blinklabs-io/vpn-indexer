@@ -66,7 +66,11 @@ func ResetCachedSystemStart() {
 	systemStart = nil
 }
 
-func ogmiosSystemStart(ogmios *ogmigo.Client) (time.Time, error) {
+type genesisConfigClient interface {
+	GenesisConfig(context.Context, string) (json.RawMessage, error)
+}
+
+func ogmiosSystemStart(ogmios genesisConfigClient) (time.Time, error) {
 	// Return cached system start
 	if systemStart != nil {
 		return *systemStart, nil
@@ -77,13 +81,13 @@ func ogmiosSystemStart(ogmios *ogmigo.Client) (time.Time, error) {
 		"shelley",
 	)
 	if err != nil {
-		return *systemStart, err
+		return time.Time{}, err
 	}
 	var tmpGenesisConfig struct {
 		StartTime time.Time `json:"startTime"`
 	}
 	if err := json.Unmarshal(genesisConfigRaw, &tmpGenesisConfig); err != nil {
-		return *systemStart, err
+		return time.Time{}, err
 	}
 	systemStart = &tmpGenesisConfig.StartTime
 	return *systemStart, nil

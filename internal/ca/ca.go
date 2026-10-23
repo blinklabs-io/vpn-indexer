@@ -23,6 +23,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"math/big"
 	"os"
 	"time"
@@ -124,7 +125,10 @@ func (c *Ca) loadKey(cfg *config.Config) error {
 
 func (c *Ca) GenerateClientCert(clientName string) (*ClientCert, error) {
 	// Generate cert serial number from client name
-	clientSerial := ClientNameToSerialNumber(clientName)
+	clientSerial, err := ClientNameToSerialNumber(clientName)
+	if err != nil {
+		return nil, err
+	}
 	// Cert template
 	cert := &x509.Certificate{
 		SerialNumber: clientSerial,
@@ -212,10 +216,13 @@ func (c *Ca) GenerateCRL(
 	return ret, nil
 }
 
-func ClientNameToSerialNumber(clientName string) *big.Int {
+func ClientNameToSerialNumber(clientName string) (*big.Int, error) {
 	// Hash client name using blake2b-160 to use as cert serial number
-	hasher, _ := blake2b.New(20, nil)
+	hasher, err := blake2b.New(20, nil)
+	if err != nil {
+		return nil, fmt.Errorf("create BLAKE2b hasher: %w", err)
+	}
 	hasher.Write([]byte(clientName))
 	clientNameHash := hasher.Sum(nil)
-	return new(big.Int).SetBytes(clientNameHash)
+	return new(big.Int).SetBytes(clientNameHash), nil
 }

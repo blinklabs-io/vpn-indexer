@@ -90,17 +90,18 @@ func (c *Client) SavePeerToS3WithContext(
 	// Retry loop for handling concurrent modifications
 	for attempt := 0; attempt < maxS3Retries; attempt++ {
 		// Load existing file or create new
-		peerFile, loadErr := c.loadPeerFileFromS3(ctx, svc, key)
+		loadedPeerFile, loadErr := c.loadPeerFileFromS3(ctx, svc, key)
 		if loadErr != nil {
 			return fmt.Errorf("failed to load peer file: %w", loadErr)
 		}
 
-		isNewFile := peerFile == nil
-		if isNewFile {
-			peerFile = &PeerFile{
-				AssetName: hex.EncodeToString(assetName),
-				Peers:     []PeerInfo{},
-			}
+		isNewFile := loadedPeerFile == nil
+		peerFile := &PeerFile{
+			AssetName: hex.EncodeToString(assetName),
+			Peers:     []PeerInfo{},
+		}
+		if loadedPeerFile != nil {
+			peerFile = loadedPeerFile
 		}
 
 		// Add or update peer in slice
