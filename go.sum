@@ -6,8 +6,8 @@ github.com/Salvionied/apollo v1.8.2 h1:4Z4qcX3sBWmnAyJPik9YkGePb48ybyRCK0gGOpNrn
 github.com/Salvionied/apollo v1.8.2/go.mod h1:AoustyHnbVPaNx8MpfsBiKVWrH5Bv7q6qgk36qkts/Y=
 github.com/SundaeSwap-finance/kugo v1.3.2 h1:1n8XRnJIFITXndvMADouRbst4PeFX3+QUU3Z1uI7VmU=
 github.com/SundaeSwap-finance/kugo v1.3.2/go.mod h1:xf6LRpVZLDcYsyxDk31c82pPI+gOnX8kWK/5i1nELAM=
-github.com/SundaeSwap-finance/ogmigo/v6 v6.2.1 h1:SzPURmU4tqay5KyfKZ4QDygaXjGH1SCeOX5oWL+V6nI=
-github.com/SundaeSwap-finance/ogmigo/v6 v6.2.1/go.mod h1:EYpYiNZ8bWrxfm1mPp0+OlRP+8YWSOGdoako0B8g+t8=
+github.com/SundaeSwap-finance/ogmigo/v6 v6.2.2 h1:5ykOz7mYwPXWvDjxQJWY/qHRoJq9zNaG8jfr/LL7NQg=
+github.com/SundaeSwap-finance/ogmigo/v6 v6.2.2/go.mod h1:EYpYiNZ8bWrxfm1mPp0+OlRP+8YWSOGdoako0B8g+t8=
 github.com/aead/siphash v1.0.1/go.mod h1:Nywa3cDsYNNK3gaciGTWPwHt0wlpNV15vwmswBAUSII=
 github.com/aws/aws-sdk-go v1.55.8 h1:JRmEUbU52aJQZ2AjX4q4Wu7t4uZjOu71uyNmaWlUkJQ=
 github.com/aws/aws-sdk-go v1.55.8/go.mod h1:ZkViS9AqA6otK+JBBNH2++sx1sgxrPKcSzPPvQkUtXk=
