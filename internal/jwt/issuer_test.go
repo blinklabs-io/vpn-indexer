@@ -70,7 +70,7 @@ func TestNewIssuerWithInvalidPEM(t *testing.T) {
 	keyPath := filepath.Join(tmpDir, "invalid.key")
 
 	// Write invalid PEM data
-	if err := os.WriteFile(keyPath, []byte("not valid pem data"), 0600); err != nil {
+	if err := os.WriteFile(keyPath, []byte("not valid pem data"), 0o600); err != nil {
 		t.Fatalf("failed to write invalid key file: %v", err)
 	}
 
