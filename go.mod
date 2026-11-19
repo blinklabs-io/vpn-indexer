@@ -1,6 +1,6 @@
 module github.com/blinklabs-io/vpn-indexer
 
-go 1.26.10
+go 1.26.11
 
 require (
 	github.com/Salvionied/apollo v1.8.2
@@ -11,7 +11,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.10
 	github.com/aws/smithy-go v1.28.9
 	github.com/blinklabs-io/adder v0.46.0
-	github.com/blinklabs-io/gouroboros v0.218.3
+	github.com/blinklabs-io/gouroboros v0.220.2
 	github.com/glebarez/sqlite v1.11.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/kelseyhightower/envconfig v1.4.0
@@ -51,7 +51,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.25.0 // indirect
 	github.com/blinklabs-io/go-bip39 v0.2.0 // indirect
-	github.com/blinklabs-io/plutigo v0.12.0 // indirect
+	github.com/blinklabs-io/plutigo v0.12.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.5.1 // indirect
 	github.com/btcsuite/btcd/btcutil v1.2.0 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.2.0 // indirect
