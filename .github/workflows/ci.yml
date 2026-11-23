@@ -13,6 +13,7 @@ jobs:
   go-test:
     uses: blinklabs-io/actions/.github/workflows/reuseable-go-test.yml@main
     with:
+      check-format: true
       nilaway-include-pkgs: github.com/blinklabs-io/vpn-indexer
       run-golangci-lint: true
       run-nilaway: true
